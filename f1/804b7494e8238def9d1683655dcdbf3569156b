@@ -1,0 +1,20 @@
+AGENTS.md
+  s_8b7540614dbd7e::t_8dcee430f0eb60 1-47
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.3",
+  "base_commit_sha": "f1804b7494e8238def9d1683655dcdbf3569156b",
+  "prompts": {},
+  "logical_commit_id": "f1804b7494e8238def9d1683655dcdbf3569156b",
+  "sessions": {
+    "s_8b7540614dbd7e": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019f479b-5272-7a80-8c0a-9d3dde4e2d12",
+        "model": "gpt-5.5"
+      },
+      "human_author": "huangdonghong3 <huangdonghong@bigo.sg>"
+    }
+  }
+}
