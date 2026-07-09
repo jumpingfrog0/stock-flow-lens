@@ -1,0 +1,115 @@
+import asyncio
+from datetime import date
+
+import httpx
+
+from app.core.config import settings
+from app.providers.base import MoneyFlowProvider, StockDailyFlow, StockDailyFlowResult
+from app.utils.errors import InvalidSymbolError, NoDataError, UpstreamError
+
+
+EASTMONEY_URL = "https://push2his.eastmoney.com/api/qt/stock/fflow/daykline/get"
+
+
+class EastMoneyProvider(MoneyFlowProvider):
+    source = "eastmoney"
+
+    async def fetch_stock_daily_flow(
+        self, symbol: str, start_date: date, end_date: date
+    ) -> StockDailyFlowResult:
+        secid, market = infer_secid(symbol)
+        params = {
+            "secid": secid,
+            "lmt": "0",
+            "klt": "101",
+            "fields1": "f1,f2,f3,f7",
+            "fields2": "f51,f52,f53,f54,f55,f56,f57,f58,f59,f60,f61,f62,f63",
+        }
+        headers = {
+            "User-Agent": "Mozilla/5.0",
+            "Referer": "https://quote.eastmoney.com/",
+        }
+
+        try:
+            payload = await _get_json_with_retry(params, headers)
+        except (httpx.HTTPError, ValueError) as exc:
+            raise UpstreamError("东方财富接口请求失败", symbol) from exc
+
+        data = payload.get("data")
+        if not data:
+            raise NoDataError(symbol)
+
+        klines = data.get("klines") or []
+        rows = [
+            row
+            for row in (_parse_kline(kline) for kline in klines)
+            if start_date <= row.trade_date <= end_date
+        ]
+        if not rows:
+            raise NoDataError(symbol)
+
+        return StockDailyFlowResult(
+            code=str(data.get("code") or symbol),
+            name=str(data.get("name") or symbol),
+            market=market,
+            secid=secid,
+            source=self.source,
+            rows=rows,
+        )
+
+
+def infer_secid(symbol: str) -> tuple[str, str]:
+    if not symbol.isdigit() or len(symbol) != 6:
+        raise InvalidSymbolError(symbol)
+
+    if symbol.startswith(("600", "601", "603", "605", "688")):
+        return f"1.{symbol}", "sh"
+    if symbol.startswith(("000", "001", "002", "003", "300", "301")):
+        return f"0.{symbol}", "sz"
+    raise InvalidSymbolError(symbol)
+
+
+async def _get_json_with_retry(params: dict[str, str], headers: dict[str, str]) -> dict:
+    last_error: Exception | None = None
+    async with httpx.AsyncClient(
+        timeout=settings.eastmoney_timeout_seconds,
+        trust_env=False,
+    ) as client:
+        for attempt in range(3):
+            try:
+                response = await client.get(EASTMONEY_URL, params=params, headers=headers)
+                response.raise_for_status()
+                return response.json()
+            except (httpx.HTTPError, ValueError) as exc:
+                last_error = exc
+                if attempt < 2:
+                    await asyncio.sleep(0.4 * (attempt + 1))
+    if last_error:
+        raise last_error
+    raise UpstreamError("东方财富接口请求失败")
+
+
+def _to_float(value: str) -> float | None:
+    if value in {"", "-", "None", "null"}:
+        return None
+    return float(value)
+
+
+def _parse_kline(kline: str) -> StockDailyFlow:
+    parts = kline.split(",")
+    if len(parts) < 13:
+        raise UpstreamError("东方财富资金流字段数量异常")
+
+    try:
+        return StockDailyFlow(
+            trade_date=date.fromisoformat(parts[0]),
+            main_net_inflow=float(parts[1]),
+            small_inflow=_to_float(parts[2]),
+            super_large_inflow=_to_float(parts[3]),
+            large_inflow=_to_float(parts[4]),
+            medium_inflow=_to_float(parts[5]),
+            close_price=_to_float(parts[11]),
+            change_pct=_to_float(parts[12]),
+        )
+    except (TypeError, ValueError) as exc:
+        raise UpstreamError("东方财富资金流字段解析失败") from exc
