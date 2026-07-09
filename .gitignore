@@ -1,0 +1,76 @@
+# Environment
+.env
+.env.*
+!.env.example
+
+# Dependencies
+node_modules/
+.pnp/
+.pnp.js
+.yarn/install-state.gz
+
+# Next.js
+.next/
+out/
+next-env.d.ts
+
+# Frontend build artifacts
+dist/
+build/
+coverage/
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+.Python
+.venv/
+venv/
+env/
+ENV/
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+.pyre/
+.tox/
+.nox/
+.coverage
+htmlcov/
+
+# FastAPI / local runtime
+*.pid
+*.log
+logs/
+
+# SQLite and local data cache
+*.db
+*.db-*
+*.sqlite
+*.sqlite3
+data/
+cache/
+
+# Generated exports
+exports/
+*.csv
+*.xlsx
+*.xls
+
+# Package managers
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+.npm/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# IDEs
+.idea/
+.vscode/
+
+# Temporary files
+tmp/
+temp/
