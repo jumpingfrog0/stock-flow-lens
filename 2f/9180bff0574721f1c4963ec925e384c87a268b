@@ -1,0 +1,20 @@
+"docs/资金流透镜 项目计划.md"
+  s_2a73e633a02bce::t_af53e2f76417f4 1-468
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.3",
+  "base_commit_sha": "2f9180bff0574721f1c4963ec925e384c87a268b",
+  "prompts": {},
+  "logical_commit_id": "2f9180bff0574721f1c4963ec925e384c87a268b",
+  "sessions": {
+    "s_2a73e633a02bce": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019f46d1-e48f-7771-b4ef-176f182b0756",
+        "model": "gpt-5.5"
+      },
+      "human_author": "huangdonghong3 <huangdonghong@bigo.sg>"
+    }
+  }
+}
