@@ -1,0 +1,20 @@
+.gitignore
+  s_519b729c89455a::t_f368faf27c7e31 1-76
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.3",
+  "base_commit_sha": "150b81ac5060a44f86c4794d730400d913df14dc",
+  "prompts": {},
+  "logical_commit_id": "150b81ac5060a44f86c4794d730400d913df14dc",
+  "sessions": {
+    "s_519b729c89455a": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019f46c6-0dc0-7053-baf4-2de5465aefc2",
+        "model": "gpt-5.5"
+      },
+      "human_author": "huangdonghong3 <huangdonghong@bigo.sg>"
+    }
+  }
+}
