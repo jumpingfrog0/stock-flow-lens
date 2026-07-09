@@ -3,6 +3,7 @@ from datetime import date
 
 from sqlalchemy.orm import Session
 
+from app.db.models import MoneyFlowDaily
 from app.providers.base import MoneyFlowProvider
 from app.providers.eastmoney import infer_secid
 from app.schemas.money_flow import (
@@ -64,7 +65,7 @@ class MoneyFlowService:
         start_key = start_date.isoformat()
         end_key = end_date.isoformat()
         cached_rows = self.cache.get_daily_rows(symbol, start_key, end_key, self.provider.source)
-        cache_hit = len(cached_rows) > 0
+        cache_hit = cache_covers_range(cached_rows, start_key, end_key)
         logger.info(
             "money_flow_query cache_hit=%s symbol=%s startDate=%s endDate=%s",
             str(cache_hit).lower(),
@@ -117,6 +118,12 @@ def validate_date_range(start_date: date, end_date: date) -> None:
         raise InvalidDateRangeError("开始日期不能晚于结束日期")
     if (end_date - start_date).days > 366:
         raise InvalidDateRangeError("日期区间不能超过 366 天")
+
+
+def cache_covers_range(cached_rows: list[MoneyFlowDaily], start_date: str, end_date: str) -> bool:
+    if not cached_rows:
+        return False
+    return cached_rows[0].trade_date <= start_date and cached_rows[-1].trade_date >= end_date
 
 
 def direction_for(value: float) -> str:

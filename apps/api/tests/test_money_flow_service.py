@@ -14,8 +14,12 @@ from app.utils.errors import InvalidDateRangeError, InvalidSymbolError
 class FakeProvider(MoneyFlowProvider):
     source = "eastmoney"
 
-    def __init__(self):
+    def __init__(self, rows=None):
         self.calls = 0
+        self.rows = rows or [
+            make_flow_row(date(2026, 7, 8), 100.0),
+            make_flow_row(date(2026, 7, 9), -50.0),
+        ]
 
     async def fetch_stock_daily_flow(self, symbol, start_date, end_date):
         self.calls += 1
@@ -25,29 +29,21 @@ class FakeProvider(MoneyFlowProvider):
             market="sz",
             secid=f"0.{symbol}",
             source=self.source,
-            rows=[
-                StockDailyFlow(
-                    trade_date=date(2026, 7, 8),
-                    main_net_inflow=100.0,
-                    super_large_inflow=10.0,
-                    large_inflow=20.0,
-                    medium_inflow=30.0,
-                    small_inflow=40.0,
-                    close_price=10.0,
-                    change_pct=1.0,
-                ),
-                StockDailyFlow(
-                    trade_date=date(2026, 7, 9),
-                    main_net_inflow=-50.0,
-                    super_large_inflow=-5.0,
-                    large_inflow=-10.0,
-                    medium_inflow=-15.0,
-                    small_inflow=-20.0,
-                    close_price=9.8,
-                    change_pct=-2.0,
-                ),
-            ],
+            rows=[row for row in self.rows if start_date <= row.trade_date <= end_date],
         )
+
+
+def make_flow_row(trade_date, main_net_inflow):
+    return StockDailyFlow(
+        trade_date=trade_date,
+        main_net_inflow=main_net_inflow,
+        super_large_inflow=main_net_inflow * 0.1,
+        large_inflow=main_net_inflow * 0.2,
+        medium_inflow=main_net_inflow * 0.3,
+        small_inflow=main_net_inflow * 0.4,
+        close_price=10.0,
+        change_pct=1.0,
+    )
 
 
 def make_session():
@@ -81,6 +77,30 @@ async def test_summary_fetches_then_uses_cache():
     assert provider.calls == 1
     assert first.items[0].mainNetInflow == 50.0
     assert second.items[0].daily[1].cumulativeMainNetInflow == 50.0
+
+
+@pytest.mark.asyncio
+async def test_partial_cache_fetches_full_requested_range():
+    db = make_session()
+    provider = FakeProvider(
+        [
+            make_flow_row(date(2026, 7, 7), 25.0),
+            make_flow_row(date(2026, 7, 8), 100.0),
+            make_flow_row(date(2026, 7, 9), -50.0),
+        ]
+    )
+    service = MoneyFlowService(db, provider)
+
+    await service.get_summary(["300308"], date(2026, 7, 8), date(2026, 7, 9))
+    expanded = await service.get_summary(["300308"], date(2026, 7, 7), date(2026, 7, 9))
+
+    assert provider.calls == 2
+    assert expanded.items[0].tradeDays == 3
+    assert [row.tradeDate for row in expanded.items[0].daily] == [
+        date(2026, 7, 7),
+        date(2026, 7, 8),
+        date(2026, 7, 9),
+    ]
 
 
 @pytest.mark.asyncio
