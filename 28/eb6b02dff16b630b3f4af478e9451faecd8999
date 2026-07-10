@@ -1,0 +1,122 @@
+apps/api/app/services/watchlist_service.py
+  s_6aac584326119f::t_af3a2f6714fe9e 1-118
+apps/api/app/services/query_history_service.py
+  s_6aac584326119f::t_dec737da2b5b98 1-63
+apps/api/app/services/board_flow_service.py
+  s_6aac584326119f::t_e1ec584af02cfe 1-90
+apps/web/lib/excel.ts
+  s_6aac584326119f::t_14439cc7ee334f 1-39
+apps/api/app/services/money_flow_service.py
+  s_6aac584326119f::t_2a60a36c99a9de 2,14-15,19-20,29,32,44-45,59,66-94
+  s_6aac584326119f::t_aba8a01d42e38b 95-97
+apps/api/tests/test_board_flow_service.py
+  s_6aac584326119f::t_92cefbb4791e53 11,13,85-91
+  s_6aac584326119f::t_9ac3eef626bd3c 1-10,12,14-84,92-161
+apps/api/app/api/routes/query_history.py
+  s_6aac584326119f::t_0043520b2a1388 1-28
+apps/api/app/services/auto_refresh_service.py
+  s_6aac584326119f::t_0c895039b95cd3 1-64
+apps/web/package.json
+  s_6aac584326119f::t_eb280549d21120 17-18
+apps/api/app/api/routes/board_flow.py
+  s_6aac584326119f::t_dd56f5dec0ece5 1-73
+apps/api/app/schemas/query_history.py
+  s_6aac584326119f::t_c8fdbcb32aff5a 1-29
+apps/web/lib/api.ts
+  s_6aac584326119f::t_336922a39fd985 1-7,16,147,149-158,163-167,169-174,176,186-192,199-202
+  s_6aac584326119f::t_47dfbec38a8840 8-15,35,42-146,159-162,168,175,177-178,180,182-184,193-198
+  s_6aac584326119f::t_2014c1eab5650a 181
+  s_6aac584326119f::t_9f9d99079af3bd 203
+docs/api.md
+  s_6aac584326119f::t_3e2c210779f37d 13,64-189,279-281
+  s_6aac584326119f::t_1eeffd7010300c 190-274,282
+apps/api/app/api/routes/stocks.py
+  s_6aac584326119f::t_fcd59f3e66399c 1,14-18
+  s_6aac584326119f::t_120c2c8457a3c8 2-13,19-32
+apps/api/app/utils/errors.py
+  s_6aac584326119f::t_803bb6f8521a48 5,25-29
+  s_6aac584326119f::t_d7772a9f3fec6d 10-12,30-45
+  s_6aac584326119f::t_b7a0eff75aefb4 46-47
+apps/api/app/db/models.py
+  s_6aac584326119f::t_c143b9dc0535e7 1,16,39-83
+apps/api/app/services/stock_service.py
+  s_6aac584326119f::t_6940471e2fb15f 1-121
+apps/api/tests/test_board_flow_routes.py
+  s_6aac584326119f::t_af82ce2d83e9ca 1-90
+apps/api/app/api/routes/money_flow.py
+  s_6aac584326119f::t_911575ca3e780e 6-11,40-55
+apps/api/app/schemas/board_flow.py
+  s_6aac584326119f::t_51678e1a42843d 1-40
+apps/api/app/providers/eastmoney.py
+  s_6aac584326119f::t_383ed5949613ec 7-24,47,75-168,173,184-206,233-242,248
+  s_6aac584326119f::t_f40fd61ec2851e 214
+  s_6aac584326119f::t_b7c495916fc269 72-74
+  s_6aac584326119f::t_40a0ba382b8c90 169-172
+apps/api/app/schemas/watchlists.py
+  s_6aac584326119f::t_1727d7e67142f5 1-29
+apps/web/components/query-form.tsx
+  s_6aac584326119f::t_69d2edfd6c9533 3-8,10-12,14,16-19,21-23,27-29,31,33-36,38-40,42-46,48-86,90-110,112,115,117,120,123,126-173,179,189,202-212,214,218,224-234,239,250,258-265
+  s_6aac584326119f::t_29071060ac8d5d 111
+  s_6aac584326119f::t_3e30e4dafab5da 213
+  s_6aac584326119f::t_a51cdb242ba171 235
+  s_6aac584326119f::t_6f6ea648051d37 266
+apps/web/types/money-flow.ts
+  s_6aac584326119f::t_0a5bbc8708bd6d 49,118-137
+  s_6aac584326119f::t_e912bc3d355bd5 50-117
+apps/web/components/watchlist-panel.tsx
+  s_6aac584326119f::t_bae29b02526268 1-270
+apps/api/app/main.py
+  s_6aac584326119f::t_4b0b08996b7678 6,49-50
+  s_6aac584326119f::t_22aacf9fa66688 8-10,13,30,32-39,46-48
+apps/api/app/api/routes/watchlists.py
+  s_6aac584326119f::t_356e3b6b457b73 1-74
+apps/api/tests/test_stock_experience_service.py
+  s_6aac584326119f::t_d54b19230d2ada 1-169
+apps/api/app/services/cache_service.py
+  s_6aac584326119f::t_d9cecd3af848ae 8,36-46,70-75,77-80,82-86,92-95
+  s_6aac584326119f::t_67d204c0f3966e 76
+"docs/资金流透镜 项目计划.md"
+  s_6aac584326119f::t_54e6524899c537 67-68,70-80,430-438
+apps/web/components/query-history-panel.tsx
+  s_6aac584326119f::t_7b8b20c8663456 1-44
+apps/api/app/schemas/stocks.py
+  s_6aac584326119f::t_a8914a20503e09 1-19
+apps/api/app/providers/base.py
+  s_6aac584326119f::t_55663ef567ad1d 36-46,57-58,77-79
+  s_6aac584326119f::t_04718c8746f6e2 7,19-28,47-56,59-67,80-89
+  s_6aac584326119f::t_8bf187801a7daf 18
+  s_6aac584326119f::t_42638fa473b137 90
+apps/web/app/page.tsx
+  s_6aac584326119f::t_40cbe42bcb2b44 3,5,12,14-28,30,32-47,50-54,58,60-65,68-104,107,111-155,160,164,167-238,241-247,268-335,338,356-361,377-380
+  s_6aac584326119f::t_e0587964d372d2 239-240
+  s_6aac584326119f::t_b2feab90a3f529 381
+apps/api/tests/test_money_flow_service.py
+  s_6aac584326119f::t_812a5b88b13572 35-40
+apps/api/app/schemas/money_flow.py
+  s_6aac584326119f::t_4f2dcbfa642654 63-89
+apps/api/app/core/config.py
+  s_6aac584326119f::t_03a7d33ee2bc53 14-16
+apps/web/components/board-query-panel.tsx
+  s_6aac584326119f::t_ee00e7f99bef1c 1-195
+apps/api/app/db/init_db.py
+  s_6aac584326119f::t_c79da1c184453e 3,8-22
+apps/web/package-lock.json
+  s_6aac584326119f::t_9de598d7db0c31 16-17,1294-1302,1833-1845,1907-1915,1953-1964,3019-3027,5469-5480,6341-6358,6477-6497
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.3",
+  "base_commit_sha": "28eb6b02dff16b630b3f4af478e9451faecd8999",
+  "prompts": {},
+  "logical_commit_id": "28eb6b02dff16b630b3f4af478e9451faecd8999",
+  "sessions": {
+    "s_6aac584326119f": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019f47ba-de05-73d2-8d07-d896b8c678e9",
+        "model": "gpt-5.5"
+      },
+      "human_author": "jumpingfrog0 <jumpingfrog0@gmail.com>"
+    }
+  }
+}

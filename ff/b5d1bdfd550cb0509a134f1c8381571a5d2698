@@ -1,0 +1,27 @@
+apps/api/tests/test_money_flow_service.py
+  s_a13af61f9dcba5::t_65f1d72c2e97c9 17,19-22,32,36-48,80-103
+  s_a13af61f9dcba5::t_8eb9ecf21b2f7c 104-105
+"docs/资金流透镜 项目计划.md"
+  s_a13af61f9dcba5::t_644b04a825b82f 40-61,69,82-84,416-426,439
+apps/api/app/services/money_flow_service.py
+  s_a13af61f9dcba5::t_79a1ff4a64dbd4 6,123
+  s_a13af61f9dcba5::t_ef7a0f417e813a 68,121-122,124-126
+  s_a13af61f9dcba5::t_d5555ffa1b8732 127-128
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.3",
+  "base_commit_sha": "ffb5d1bdfd550cb0509a134f1c8381571a5d2698",
+  "prompts": {},
+  "logical_commit_id": "ffb5d1bdfd550cb0509a134f1c8381571a5d2698",
+  "sessions": {
+    "s_a13af61f9dcba5": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019f47a3-6f12-73b2-8dab-5599b7d9f09b",
+        "model": "gpt-5.5"
+      },
+      "human_author": "huangdonghong3 <huangdonghong@bigo.sg>"
+    }
+  }
+}
