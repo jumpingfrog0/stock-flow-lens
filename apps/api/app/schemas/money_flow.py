@@ -60,3 +60,30 @@ class MoneyFlowSummaryResponse(BaseModel):
     totalDirection: str
     totalDirectionAmount: float
     errors: list[MoneyFlowError] = []
+
+
+class MoneyFlowRefreshRecentRequest(BaseModel):
+    symbols: list[str] = Field(min_length=1)
+    source: str = "eastmoney"
+
+    @field_validator("symbols")
+    @classmethod
+    def clean_symbols(cls, value: list[str]) -> list[str]:
+        cleaned: list[str] = []
+        for symbol in value:
+            stripped = symbol.strip()
+            if stripped and stripped not in cleaned:
+                cleaned.append(stripped)
+        return cleaned
+
+
+class MoneyFlowRefreshRecentItem(BaseModel):
+    code: str
+    name: str
+    refreshedRows: int
+
+
+class MoneyFlowRefreshRecentResponse(BaseModel):
+    range: MoneyFlowRange
+    items: list[MoneyFlowRefreshRecentItem]
+    errors: list[MoneyFlowError] = []

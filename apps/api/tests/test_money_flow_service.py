@@ -32,6 +32,12 @@ class FakeProvider(MoneyFlowProvider):
             rows=[row for row in self.rows if start_date <= row.trade_date <= end_date],
         )
 
+    async def search_boards(self, board_type, query, limit):
+        raise NotImplementedError
+
+    async def fetch_board_daily_flow(self, board, board_type, start_date, end_date):
+        raise NotImplementedError
+
 
 def make_flow_row(trade_date, main_net_inflow):
     return StockDailyFlow(

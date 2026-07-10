@@ -4,11 +4,24 @@ from datetime import date
 import httpx
 
 from app.core.config import settings
-from app.providers.base import MoneyFlowProvider, StockDailyFlow, StockDailyFlowResult
-from app.utils.errors import InvalidSymbolError, NoDataError, UpstreamError
+from app.providers.base import (
+    BoardDailyFlow,
+    BoardDailyFlowResult,
+    BoardSearchResult,
+    MoneyFlowProvider,
+    StockDailyFlow,
+    StockDailyFlowResult,
+    StockInfo,
+)
+from app.utils.errors import InvalidBoardError, InvalidSymbolError, NoDataError, UpstreamError
 
 
-EASTMONEY_URL = "https://push2his.eastmoney.com/api/qt/stock/fflow/daykline/get"
+EASTMONEY_FLOW_URL = "https://push2his.eastmoney.com/api/qt/stock/fflow/daykline/get"
+EASTMONEY_BOARD_LIST_URL = "https://push2.eastmoney.com/api/qt/clist/get"
+BOARD_TYPE_FS = {
+    "industry": "m:90+t:2",
+    "concept": "m:90+t:3",
+}
 
 
 class EastMoneyProvider(MoneyFlowProvider):
@@ -31,7 +44,7 @@ class EastMoneyProvider(MoneyFlowProvider):
         }
 
         try:
-            payload = await _get_json_with_retry(params, headers)
+            payload = await _get_json_with_retry(EASTMONEY_FLOW_URL, params, headers)
         except (httpx.HTTPError, ValueError) as exc:
             raise UpstreamError("东方财富接口请求失败", symbol) from exc
 
@@ -57,6 +70,107 @@ class EastMoneyProvider(MoneyFlowProvider):
             rows=rows,
         )
 
+    async def search_stocks(self, query: str = "", limit: int = 500) -> list[StockInfo]:
+        return []
+
+    async def search_boards(
+        self, board_type: str, query: str, limit: int
+    ) -> list[BoardSearchResult]:
+        fs = _board_fs(board_type)
+        params = {
+            "pn": "1",
+            "pz": "500",
+            "po": "1",
+            "np": "1",
+            "ut": "bd1d9ddb04089700cf9c27f6f7426281",
+            "fltt": "2",
+            "invt": "2",
+            "fid": "f62",
+            "fs": fs,
+            "fields": "f12,f14",
+        }
+        headers = {
+            "User-Agent": "Mozilla/5.0",
+            "Referer": "https://quote.eastmoney.com/",
+        }
+
+        try:
+            payload = await _get_json_with_retry(EASTMONEY_BOARD_LIST_URL, params, headers)
+        except (httpx.HTTPError, ValueError) as exc:
+            raise UpstreamError("东方财富板块搜索失败") from exc
+
+        diff = (payload.get("data") or {}).get("diff")
+        if diff is None:
+            raise UpstreamError("东方财富板块搜索字段异常")
+
+        keyword = query.strip().upper()
+        results: list[BoardSearchResult] = []
+        for item in diff:
+            code = str(item.get("f12") or "").strip().upper()
+            name = str(item.get("f14") or "").strip()
+            if not code or not name:
+                continue
+            if keyword and keyword not in code and keyword not in name.upper():
+                continue
+            results.append(
+                BoardSearchResult(
+                    code=code,
+                    name=name,
+                    type=board_type,
+                    market="board",
+                    secid=f"90.{code}",
+                    source=self.source,
+                )
+            )
+            if len(results) >= limit:
+                break
+        return results
+
+    async def fetch_board_daily_flow(
+        self, board: str, board_type: str, start_date: date, end_date: date
+    ) -> BoardDailyFlowResult:
+        _board_fs(board_type)
+        secid, code = infer_board_secid(board)
+        params = {
+            "secid": secid,
+            "lmt": "0",
+            "klt": "101",
+            "fields1": "f1,f2,f3,f7",
+            "fields2": "f51,f52,f53,f54,f55,f56,f57,f58,f59,f60,f61,f62,f63",
+        }
+        headers = {
+            "User-Agent": "Mozilla/5.0",
+            "Referer": "https://quote.eastmoney.com/",
+        }
+
+        try:
+            payload = await _get_json_with_retry(EASTMONEY_FLOW_URL, params, headers)
+        except (httpx.HTTPError, ValueError) as exc:
+            raise UpstreamError("东方财富板块资金流接口请求失败", code) from exc
+
+        data = payload.get("data")
+        if not data:
+            raise NoDataError(code)
+
+        klines = data.get("klines") or []
+        rows = [
+            row
+            for row in (_parse_board_kline(kline) for kline in klines)
+            if start_date <= row.trade_date <= end_date
+        ]
+        if not rows:
+            raise NoDataError(code)
+
+        return BoardDailyFlowResult(
+            code=str(data.get("code") or code),
+            name=str(data.get("name") or code),
+            type=board_type,
+            market="board",
+            secid=secid,
+            source=self.source,
+            rows=rows,
+        )
+
 
 def infer_secid(symbol: str) -> tuple[str, str]:
     if not symbol.isdigit() or len(symbol) != 6:
@@ -69,7 +183,27 @@ def infer_secid(symbol: str) -> tuple[str, str]:
     raise InvalidSymbolError(symbol)
 
 
-async def _get_json_with_retry(params: dict[str, str], headers: dict[str, str]) -> dict:
+def infer_board_secid(board: str) -> tuple[str, str]:
+    normalized = board.strip().upper()
+    if normalized.startswith("90."):
+        code = normalized[3:]
+    else:
+        code = normalized
+    if code.startswith("BK") and len(code) == 6 and code[2:].isdigit():
+        return f"90.{code}", code
+    raise InvalidBoardError(board)
+
+
+def _board_fs(board_type: str) -> str:
+    try:
+        return BOARD_TYPE_FS[board_type]
+    except KeyError as exc:
+        raise InvalidBoardError(board_type) from exc
+
+
+async def _get_json_with_retry(
+    url: str, params: dict[str, str], headers: dict[str, str]
+) -> dict:
     last_error: Exception | None = None
     async with httpx.AsyncClient(
         timeout=settings.eastmoney_timeout_seconds,
@@ -77,7 +211,7 @@ async def _get_json_with_retry(params: dict[str, str], headers: dict[str, str]) 
     ) as client:
         for attempt in range(3):
             try:
-                response = await client.get(EASTMONEY_URL, params=params, headers=headers)
+                response = await client.get(url, params=params, headers=headers)
                 response.raise_for_status()
                 return response.json()
             except (httpx.HTTPError, ValueError) as exc:
@@ -96,12 +230,22 @@ def _to_float(value: str) -> float | None:
 
 
 def _parse_kline(kline: str) -> StockDailyFlow:
+    return _parse_daily_flow(kline, StockDailyFlow)
+
+
+def _parse_board_kline(kline: str) -> BoardDailyFlow:
+    return _parse_daily_flow(kline, BoardDailyFlow)
+
+
+def _parse_daily_flow(
+    kline: str, row_class: type[StockDailyFlow] | type[BoardDailyFlow]
+) -> StockDailyFlow | BoardDailyFlow:
     parts = kline.split(",")
     if len(parts) < 13:
         raise UpstreamError("东方财富资金流字段数量异常")
 
     try:
-        return StockDailyFlow(
+        return row_class(
             trade_date=date.fromisoformat(parts[0]),
             main_net_inflow=float(parts[1]),
             small_inflow=_to_float(parts[2]),

@@ -10,7 +10,7 @@
 
 ## POST /api/money-flow/summary
 
-1A 主接口，返回区间统计、每日明细和图表所需数据。
+1A 主接口，返回区间统计、每日明细和图表所需数据。`symbols` 支持 6 位股票代码或股票名称；名称解析规则为精确名称优先，否则唯一模糊匹配，多匹配返回 `AMBIGUOUS_SYMBOL`。
 
 请求：
 
@@ -61,10 +61,225 @@
 }
 ```
 
+成功查询会自动写入查询历史。
+
+## POST /api/money-flow/refresh-recent
+
+强制刷新指定股票最近 10 个自然日资金流，并覆盖本地缓存。`symbols` 支持股票代码或名称。
+
+请求：
+
+```json
+{
+  "symbols": ["300308", "中际旭创"],
+  "source": "eastmoney"
+}
+```
+
+响应：
+
+```json
+{
+  "range": {
+    "startDate": "2026-07-01",
+    "endDate": "2026-07-10"
+  },
+  "items": [
+    {
+      "code": "300308",
+      "name": "中际旭创",
+      "refreshedRows": 7
+    }
+  ],
+  "errors": []
+}
+```
+
+## GET /api/stocks/search
+
+搜索本地 `stocks` 表，支持代码和名称模糊匹配。
+
+查询参数：
+
+- `q`：搜索关键词，可为空。
+- `limit`：返回数量，默认 `20`，最大 `100`。
+
+响应：
+
+```json
+[
+  {
+    "code": "300308",
+    "name": "中际旭创",
+    "market": "sz",
+    "secid": "0.300308",
+    "industry": "通信设备",
+    "updatedAt": "2026-07-10T00:00:00+00:00"
+  }
+]
+```
+
+## POST /api/stocks/refresh
+
+从 provider 搜索或列表能力刷新股票基础信息并 upsert 到本地。当前 EastMoney provider 未接入全市场列表时返回 `refreshed: 0`，保留可测试扩展 seam。
+
+请求：
+
+```json
+{
+  "query": "",
+  "limit": 500
+}
+```
+
+响应：
+
+```json
+{
+  "refreshed": 0
+}
+```
+
+## GET /api/query-history
+
+返回最近查询历史。
+
+查询参数：
+
+- `limit`：返回数量，默认 `50`，最大 `200`。
+
+## POST /api/query-history
+
+手动写入查询历史。
+
+请求：
+
+```json
+{
+  "symbols": ["300308"],
+  "startDate": "2026-07-01",
+  "endDate": "2026-07-10",
+  "source": "eastmoney"
+}
+```
+
+响应：
+
+```json
+{
+  "id": 1,
+  "symbols": ["300308"],
+  "startDate": "2026-07-01",
+  "endDate": "2026-07-10",
+  "source": "eastmoney",
+  "createdAt": "2026-07-10T00:00:00+00:00"
+}
+```
+
+## /api/watchlists
+
+自选股分组和分组股票管理。
+
+- `GET /api/watchlists`：返回所有分组及 items。
+- `POST /api/watchlists`：创建分组，请求 `{ "name": "重点观察" }`。
+- `PATCH /api/watchlists/{id}`：重命名分组，请求 `{ "name": "短线观察" }`。
+- `DELETE /api/watchlists/{id}`：删除分组。
+- `POST /api/watchlists/{id}/items`：添加股票，请求 `{ "symbol": "中际旭创" }`。
+- `DELETE /api/watchlists/{id}/items/{symbol}`：移除股票，`symbol` 支持代码或名称。
+
+## GET /api/boards/search
+
+搜索行业或概念板块。
+
+查询参数：
+
+- `type`：`industry` 或 `concept`。
+- `q`：搜索关键词，可为空。
+- `limit`：返回数量，默认 `20`，最大 `100`。
+
+示例：
+
+```text
+GET /api/boards/search?type=industry&q=半导体&limit=20
+```
+
+响应：
+
+```json
+[
+  {
+    "code": "BK0475",
+    "name": "半导体",
+    "type": "industry",
+    "market": "board",
+    "secid": "90.BK0475",
+    "source": "eastmoney"
+  }
+]
+```
+
+## POST /api/board-flow/summary
+
+1B 板块资金流汇总接口，响应结构复用个股资金流 summary，便于前端复用图表和表格。
+
+请求：
+
+```json
+{
+  "boards": ["BK0475", "BK0815"],
+  "startDate": "2026-06-08",
+  "endDate": "2026-07-07",
+  "type": "industry",
+  "source": "eastmoney"
+}
+```
+
+响应：
+
+```json
+{
+  "range": {
+    "startDate": "2026-06-08",
+    "endDate": "2026-07-07"
+  },
+  "items": [
+    {
+      "code": "BK0475",
+      "name": "半导体",
+      "mainNetInflow": 1250000000,
+      "direction": "inflow",
+      "directionAmount": 1250000000,
+      "tradeDays": 21,
+      "daily": [
+        {
+          "tradeDate": "2026-06-08",
+          "mainNetInflow": 120000000,
+          "superLargeInflow": 50000000,
+          "largeInflow": 70000000,
+          "mediumInflow": -30000000,
+          "smallInflow": -90000000,
+          "closePrice": null,
+          "changePct": 1.23,
+          "cumulativeMainNetInflow": 120000000
+        }
+      ]
+    }
+  ],
+  "totalMainNetInflow": 1250000000,
+  "totalDirection": "inflow",
+  "totalDirectionAmount": 1250000000,
+  "errors": []
+}
+```
+
 ## 错误码
 
 ```text
 INVALID_SYMBOL
+AMBIGUOUS_SYMBOL
+STOCK_NOT_FOUND
+WATCHLIST_NOT_FOUND
+INVALID_BOARD
 INVALID_DATE_RANGE
 NO_DATA
 UPSTREAM_FAILED

@@ -1,5 +1,5 @@
 import logging
-from datetime import date
+from datetime import date, timedelta
 
 from sqlalchemy.orm import Session
 
@@ -11,9 +11,13 @@ from app.schemas.money_flow import (
     MoneyFlowError,
     MoneyFlowItem,
     MoneyFlowRange,
+    MoneyFlowRefreshRecentItem,
+    MoneyFlowRefreshRecentResponse,
     MoneyFlowSummaryResponse,
 )
 from app.services.cache_service import CacheService
+from app.services.query_history_service import QueryHistoryService
+from app.services.stock_service import StockService
 from app.utils.errors import AppError, InvalidDateRangeError, NoDataError
 
 
@@ -22,8 +26,10 @@ logger = logging.getLogger(__name__)
 
 class MoneyFlowService:
     def __init__(self, db: Session, provider: MoneyFlowProvider):
+        self.db = db
         self.cache = CacheService(db)
         self.provider = provider
+        self.stocks = StockService(db)
 
     async def get_summary(
         self, symbols: list[str], start_date: date, end_date: date
@@ -35,7 +41,8 @@ class MoneyFlowService:
 
         for symbol in symbols:
             try:
-                item = await self._get_symbol_summary(symbol, start_date, end_date)
+                code = self.stocks.resolve_symbol(symbol)
+                item = await self._get_symbol_summary(code, start_date, end_date)
                 items.append(item)
             except AppError as exc:
                 app_errors.append(exc)
@@ -49,12 +56,42 @@ class MoneyFlowService:
             raise NoDataError()
 
         total = sum(item.mainNetInflow for item in items)
+        QueryHistoryService(self.db).create([item.code for item in items], start_date, end_date, self.provider.source)
         return MoneyFlowSummaryResponse(
             range=MoneyFlowRange(startDate=start_date, endDate=end_date),
             items=items,
             totalMainNetInflow=total,
             totalDirection=direction_for(total),
             totalDirectionAmount=abs(total) if total < 0 else total,
+            errors=errors,
+        )
+
+    async def refresh_recent(self, symbols: list[str], end_date: date | None = None) -> MoneyFlowRefreshRecentResponse:
+        end_date = end_date or date.today()
+        start_date = end_date - timedelta(days=9)
+        items: list[MoneyFlowRefreshRecentItem] = []
+        errors: list[MoneyFlowError] = []
+
+        for symbol in symbols:
+            try:
+                code = self.stocks.resolve_symbol(symbol)
+                result = await self.provider.fetch_stock_daily_flow(code, start_date, end_date)
+                self.cache.upsert_provider_result(result)
+                items.append(
+                    MoneyFlowRefreshRecentItem(
+                        code=result.code,
+                        name=result.name,
+                        refreshedRows=len(result.rows),
+                    )
+                )
+            except AppError as exc:
+                errors.append(
+                    MoneyFlowError(code=exc.code or symbol, errorCode=exc.error_code, message=exc.message)
+                )
+
+        return MoneyFlowRefreshRecentResponse(
+            range=MoneyFlowRange(startDate=start_date, endDate=end_date),
+            items=items,
             errors=errors,
         )
 

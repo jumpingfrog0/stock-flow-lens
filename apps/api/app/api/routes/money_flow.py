@@ -3,7 +3,12 @@ from sqlalchemy.orm import Session
 
 from app.db.session import get_db
 from app.providers.eastmoney import EastMoneyProvider
-from app.schemas.money_flow import MoneyFlowSummaryRequest, MoneyFlowSummaryResponse
+from app.schemas.money_flow import (
+    MoneyFlowRefreshRecentRequest,
+    MoneyFlowRefreshRecentResponse,
+    MoneyFlowSummaryRequest,
+    MoneyFlowSummaryResponse,
+)
 from app.services.money_flow_service import MoneyFlowService
 from app.utils.errors import AppError, InvalidDateRangeError, InvalidSymbolError, NoDataError, UpstreamError
 
@@ -32,6 +37,22 @@ async def get_money_flow_summary(
         raise _http_error(404, exc) from exc
     except UpstreamError as exc:
         raise _http_error(502, exc) from exc
+    except AppError as exc:
+        raise _http_error(400, exc) from exc
+
+
+@router.post("/refresh-recent", response_model=MoneyFlowRefreshRecentResponse)
+async def refresh_recent_money_flow(
+    request: MoneyFlowRefreshRecentRequest, db: Session = Depends(get_db)
+) -> MoneyFlowRefreshRecentResponse:
+    if request.source != "eastmoney":
+        raise HTTPException(
+            status_code=400,
+            detail={"errorCode": "INVALID_SOURCE", "message": "1B 仅支持 eastmoney 数据源"},
+        )
+
+    service = MoneyFlowService(db, EastMoneyProvider())
+    return await service.refresh_recent(request.symbols)
 
 
 def _http_error(status_code: int, exc: AppError) -> HTTPException:

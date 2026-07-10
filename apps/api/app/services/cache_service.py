@@ -5,7 +5,7 @@ from sqlalchemy.dialects.sqlite import insert
 from sqlalchemy.orm import Session
 
 from app.db.models import MoneyFlowDaily, Stock
-from app.providers.base import StockDailyFlowResult
+from app.providers.base import StockDailyFlowResult, StockInfo
 
 
 class CacheService:
@@ -33,7 +33,17 @@ class CacheService:
 
     def upsert_provider_result(self, result: StockDailyFlowResult) -> None:
         now = datetime.now(UTC).isoformat()
-        self._upsert_stock(result, now)
+        self.upsert_stock(
+            StockInfo(
+                code=result.code,
+                name=result.name,
+                market=result.market,
+                secid=result.secid,
+                source=result.source,
+                industry=result.industry,
+            ),
+            now,
+        )
         for row in result.rows:
             payload = {
                 "stock_code": result.code,
@@ -59,20 +69,30 @@ class CacheService:
             self.db.execute(statement)
         self.db.commit()
 
-    def _upsert_stock(self, result: StockDailyFlowResult, now: str) -> None:
+    def upsert_stocks(self, stocks: list[StockInfo]) -> int:
+        now = datetime.now(UTC).isoformat()
+        for stock in stocks:
+            self.upsert_stock(stock, now)
+        self.db.commit()
+        return len(stocks)
+
+    def upsert_stock(self, stock: StockInfo, now: str | None = None) -> None:
+        now = now or datetime.now(UTC).isoformat()
         statement = insert(Stock).values(
-            code=result.code,
-            name=result.name,
-            market=result.market,
-            secid=result.secid,
+            code=stock.code,
+            name=stock.name,
+            market=stock.market,
+            secid=stock.secid,
+            industry=stock.industry,
             updated_at=now,
         )
         statement = statement.on_conflict_do_update(
             index_elements=["code"],
             set_={
-                "name": result.name,
-                "market": result.market,
-                "secid": result.secid,
+                "name": stock.name,
+                "market": stock.market,
+                "secid": stock.secid,
+                "industry": stock.industry,
                 "updated_at": now,
             },
         )
