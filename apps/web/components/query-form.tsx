@@ -4,9 +4,10 @@ import { Download, FileSpreadsheet, RefreshCw, Search } from "lucide-react";
 import { FormEvent, useEffect, useMemo, useState } from "react";
 
 import { ApiError, refreshStocks, searchStocks } from "@/lib/api";
-import type { StockSearchItem } from "@/types/money-flow";
+import type { DataSource, StockSearchItem } from "@/types/money-flow";
 
 type QueryFormProps = {
+  source: DataSource;
   rawSymbols: string;
   startDate: string;
   endDate: string;
@@ -24,6 +25,7 @@ type QueryFormProps = {
 };
 
 export function QueryForm({
+  source,
   rawSymbols,
   startDate,
   endDate,
@@ -93,7 +95,7 @@ export function QueryForm({
     setIsRefreshingStocks(true);
     setSearchError(null);
     try {
-      await refreshStocks({ query: stockQuery.trim(), limit: 500 });
+      await refreshStocks({ query: stockQuery.trim(), limit: 500, source });
       const items = await searchStocks({ q: stockQuery.trim(), limit: 8 });
       setSuggestions(items);
     } catch (err) {

@@ -1,6 +1,7 @@
 import type { MoneyFlowSummaryResponse } from "@/types/money-flow";
 
 const COLUMNS = [
+  "source",
   "code",
   "name",
   "tradeDate",
@@ -17,6 +18,7 @@ const COLUMNS = [
 export function exportMoneyFlowCsv(data: MoneyFlowSummaryResponse): void {
   const rows = data.items.flatMap((item) =>
     item.daily.map((daily) => [
+      data.source,
       item.code,
       item.name,
       daily.tradeDate,
@@ -35,7 +37,7 @@ export function exportMoneyFlowCsv(data: MoneyFlowSummaryResponse): void {
   const url = URL.createObjectURL(blob);
   const anchor = document.createElement("a");
   anchor.href = url;
-  anchor.download = `stock-flow-lens_${data.range.startDate}_${data.range.endDate}.csv`;
+  anchor.download = `stock-flow-lens_${data.source}_${data.range.startDate}_${data.range.endDate}.csv`;
   document.body.appendChild(anchor);
   anchor.click();
   anchor.remove();

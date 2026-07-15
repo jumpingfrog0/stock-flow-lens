@@ -29,7 +29,13 @@ import {
 import { exportMoneyFlowCsv } from "@/lib/csv";
 import { exportMoneyFlowExcel } from "@/lib/excel";
 import { defaultDateRange, directionClass, directionLabel, formatAmount } from "@/lib/format";
-import type { BoardType, MoneyFlowSummaryResponse, QueryHistoryItem, Watchlist } from "@/types/money-flow";
+import type {
+  BoardType,
+  DataSource,
+  MoneyFlowSummaryResponse,
+  QueryHistoryItem,
+  Watchlist,
+} from "@/types/money-flow";
 
 type WorkspaceMode = "stock" | BoardType;
 
@@ -37,6 +43,7 @@ type StockQuery = {
   symbols: string[];
   startDate: string;
   endDate: string;
+  source: DataSource;
 };
 
 const TABS: { value: WorkspaceMode; label: string }[] = [
@@ -47,6 +54,7 @@ const TABS: { value: WorkspaceMode; label: string }[] = [
 
 export default function HomePage() {
   const initialRange = useMemo(() => defaultDateRange(), []);
+  const [source, setSource] = useState<DataSource>("akshare");
   const [mode, setMode] = useState<WorkspaceMode>("stock");
   const [resultMode, setResultMode] = useState<WorkspaceMode>("stock");
   const [rawSymbols, setRawSymbols] = useState("300308, 300502, 603986");
@@ -100,8 +108,9 @@ export default function HomePage() {
     symbols: string[],
     queryStartDate: string,
     queryEndDate: string,
-    options: { saveHistory?: boolean } = {},
+    options: { saveHistory?: boolean; source?: DataSource } = {},
   ) {
+    const querySource = options.source ?? source;
     setIsLoading(true);
     setError(null);
     setSideError(null);
@@ -110,19 +119,24 @@ export default function HomePage() {
         symbols,
         startDate: queryStartDate,
         endDate: queryEndDate,
-        source: "eastmoney",
+        source: querySource,
       });
       setData(response);
       setSelectedCode(response.items[0]?.code ?? null);
       setResultMode("stock");
-      setLastStockQuery({ symbols, startDate: queryStartDate, endDate: queryEndDate });
+      setLastStockQuery({
+        symbols,
+        startDate: queryStartDate,
+        endDate: queryEndDate,
+        source: querySource,
+      });
       if (options.saveHistory !== false) {
         try {
           await createQueryHistory({
             symbols,
             startDate: queryStartDate,
             endDate: queryEndDate,
-            source: "eastmoney",
+            source: querySource,
           });
           void loadHistory();
         } catch (err) {
@@ -153,7 +167,7 @@ export default function HomePage() {
         startDate: queryStartDate,
         endDate: queryEndDate,
         type,
-        source: "eastmoney",
+        source,
       });
       setData(response);
       setSelectedCode(response.items[0]?.code ?? null);
@@ -175,9 +189,10 @@ export default function HomePage() {
     setError(null);
     setSideError(null);
     try {
-      await refreshRecentMoneyFlow({ symbols: lastStockQuery.symbols, source: "eastmoney" });
+      await refreshRecentMoneyFlow({ symbols: lastStockQuery.symbols, source: lastStockQuery.source });
       await handleStockSubmit(lastStockQuery.symbols, lastStockQuery.startDate, lastStockQuery.endDate, {
         saveHistory: false,
+        source: lastStockQuery.source,
       });
     } catch (err) {
       setError(errorMessage(err, "最近交易日刷新失败"));
@@ -187,11 +202,24 @@ export default function HomePage() {
   }
 
   function handleReuseHistory(item: QueryHistoryItem) {
+    setSource(item.source);
     setMode("stock");
     setRawSymbols(item.symbols.join("\n"));
     setStartDate(item.startDate);
     setEndDate(item.endDate);
-    void handleStockSubmit(item.symbols, item.startDate, item.endDate, { saveHistory: false });
+    void handleStockSubmit(item.symbols, item.startDate, item.endDate, {
+      saveHistory: false,
+      source: item.source,
+    });
+  }
+
+  function handleSourceChange(nextSource: DataSource) {
+    setSource(nextSource);
+    setData(null);
+    setSelectedCode(null);
+    setLastStockQuery(null);
+    setError(null);
+    setSideError(null);
   }
 
   async function handleCreateWatchlist(name: string) {
@@ -266,25 +294,39 @@ export default function HomePage() {
           ) : null}
         </header>
 
-        <div className="flex flex-wrap gap-2">
-          {TABS.map((tab) => (
-            <button
-              key={tab.value}
-              type="button"
-              onClick={() => setMode(tab.value)}
-              className={`h-9 rounded border px-4 text-sm font-medium transition ${
-                mode === tab.value
-                  ? "border-accent bg-accent text-white"
-                  : "border-border bg-white text-ink hover:bg-slate-50"
-              }`}
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div className="flex flex-wrap gap-2">
+            {TABS.map((tab) => (
+              <button
+                key={tab.value}
+                type="button"
+                onClick={() => setMode(tab.value)}
+                className={`h-9 rounded border px-4 text-sm font-medium transition ${
+                  mode === tab.value
+                    ? "border-accent bg-accent text-white"
+                    : "border-border bg-white text-ink hover:bg-slate-50"
+                }`}
+              >
+                {tab.label}
+              </button>
+            ))}
+          </div>
+          <label className="flex items-center gap-2 text-sm text-muted">
+            <span>数据源</span>
+            <select
+              value={source}
+              onChange={(event) => handleSourceChange(event.target.value as DataSource)}
+              className="h-9 rounded border border-border bg-white px-3 text-sm text-ink outline-none transition focus:border-accent focus:ring-2 focus:ring-blue-100"
             >
-              {tab.label}
-            </button>
-          ))}
+              <option value="akshare">AKShare</option>
+              <option value="eastmoney">东方财富直连</option>
+            </select>
+          </label>
         </div>
 
         {mode === "stock" ? (
           <QueryForm
+            source={source}
             rawSymbols={rawSymbols}
             startDate={startDate}
             endDate={endDate}
@@ -310,6 +352,7 @@ export default function HomePage() {
           />
         ) : (
           <BoardQueryPanel
+            source={source}
             type={mode}
             startDate={startDate}
             endDate={endDate}
@@ -356,7 +399,7 @@ export default function HomePage() {
             <div className="flex items-center justify-between">
               <h2 className="text-base font-semibold text-ink">{resultLabel}查询结果</h2>
               <div className="text-xs text-muted">
-                {data.range.startDate} 至 {data.range.endDate}
+                {data.range.startDate} 至 {data.range.endDate} · {sourceLabel(data.source)}
               </div>
             </div>
             <SummaryTable
@@ -378,4 +421,8 @@ export default function HomePage() {
 
 function errorMessage(err: unknown, fallback: string): string {
   return err instanceof ApiError ? err.message : fallback;
+}
+
+function sourceLabel(source: DataSource): string {
+  return source === "akshare" ? "AKShare" : "东方财富直连";
 }

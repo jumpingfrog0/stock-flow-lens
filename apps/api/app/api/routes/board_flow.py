@@ -2,7 +2,7 @@ from typing import Annotated
 
 from fastapi import APIRouter, HTTPException, Query
 
-from app.providers.eastmoney import EastMoneyProvider
+from app.providers.factory import create_provider
 from app.schemas.board_flow import (
     BoardFlowSummaryRequest,
     BoardFlowSummaryResponse,
@@ -10,7 +10,15 @@ from app.schemas.board_flow import (
     BoardType,
 )
 from app.services.board_flow_service import BoardFlowService
-from app.utils.errors import AppError, InvalidBoardError, InvalidDateRangeError, NoDataError, UpstreamError
+from app.utils.errors import (
+    AppError,
+    InvalidBoardError,
+    InvalidDateRangeError,
+    InvalidSourceError,
+    NoDataError,
+    SourceDateRangeUnsupportedError,
+    UpstreamError,
+)
 
 
 boards_router = APIRouter(prefix="/api/boards", tags=["boards"])
@@ -22,9 +30,10 @@ async def search_boards(
     type_: Annotated[BoardType, Query(alias="type")],
     q: str = "",
     limit: Annotated[int, Query(ge=1, le=100)] = 20,
+    source: str = "akshare",
 ) -> list[BoardSearchItem]:
-    service = BoardFlowService(EastMoneyProvider())
     try:
+        service = BoardFlowService(create_provider(source))
         results = await service.search_boards(type_, q, limit)
         return [
             BoardSearchItem(
@@ -37,7 +46,7 @@ async def search_boards(
             )
             for item in results
         ]
-    except InvalidBoardError as exc:
+    except (InvalidBoardError, InvalidSourceError) as exc:
         raise _http_error(400, exc) from exc
     except UpstreamError as exc:
         raise _http_error(502, exc) from exc
@@ -47,21 +56,17 @@ async def search_boards(
 async def get_board_flow_summary(
     request: BoardFlowSummaryRequest,
 ) -> BoardFlowSummaryResponse:
-    if request.source != "eastmoney":
-        raise HTTPException(
-            status_code=400,
-            detail={"errorCode": "INVALID_SOURCE", "message": "1B 仅支持 eastmoney 数据源"},
-        )
-
-    service = BoardFlowService(EastMoneyProvider())
     try:
+        service = BoardFlowService(create_provider(request.source))
         return await service.get_summary(request.boards, request.startDate, request.endDate, request.type)
-    except InvalidBoardError as exc:
+    except (InvalidBoardError, InvalidSourceError) as exc:
         raise _http_error(400, exc) from exc
     except InvalidDateRangeError as exc:
         raise _http_error(400, exc) from exc
     except NoDataError as exc:
         raise _http_error(404, exc) from exc
+    except SourceDateRangeUnsupportedError as exc:
+        raise _http_error(400, exc) from exc
     except UpstreamError as exc:
         raise _http_error(502, exc) from exc
 

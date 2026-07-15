@@ -7,7 +7,7 @@ class QueryHistoryCreate(BaseModel):
     symbols: list[str] = Field(min_length=1)
     startDate: date
     endDate: date
-    source: str = "eastmoney"
+    source: str = "akshare"
 
     @field_validator("symbols")
     @classmethod

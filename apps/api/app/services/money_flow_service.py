@@ -5,7 +5,7 @@ from sqlalchemy.orm import Session
 
 from app.db.models import MoneyFlowDaily
 from app.providers.base import MoneyFlowProvider
-from app.providers.eastmoney import infer_secid
+from app.providers.symbols import infer_secid
 from app.schemas.money_flow import (
     DailyMoneyFlow,
     MoneyFlowError,
@@ -58,6 +58,7 @@ class MoneyFlowService:
         total = sum(item.mainNetInflow for item in items)
         QueryHistoryService(self.db).create([item.code for item in items], start_date, end_date, self.provider.source)
         return MoneyFlowSummaryResponse(
+            source=self.provider.source,
             range=MoneyFlowRange(startDate=start_date, endDate=end_date),
             items=items,
             totalMainNetInflow=total,
@@ -90,6 +91,7 @@ class MoneyFlowService:
                 )
 
         return MoneyFlowRefreshRecentResponse(
+            source=self.provider.source,
             range=MoneyFlowRange(startDate=start_date, endDate=end_date),
             items=items,
             errors=errors,

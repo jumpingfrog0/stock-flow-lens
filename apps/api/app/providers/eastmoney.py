@@ -13,7 +13,8 @@ from app.providers.base import (
     StockDailyFlowResult,
     StockInfo,
 )
-from app.utils.errors import InvalidBoardError, InvalidSymbolError, NoDataError, UpstreamError
+from app.providers.symbols import infer_board_secid, infer_secid
+from app.utils.errors import InvalidBoardError, NoDataError, UpstreamError
 
 
 EASTMONEY_FLOW_URL = "https://push2his.eastmoney.com/api/qt/stock/fflow/daykline/get"
@@ -170,28 +171,6 @@ class EastMoneyProvider(MoneyFlowProvider):
             source=self.source,
             rows=rows,
         )
-
-
-def infer_secid(symbol: str) -> tuple[str, str]:
-    if not symbol.isdigit() or len(symbol) != 6:
-        raise InvalidSymbolError(symbol)
-
-    if symbol.startswith(("600", "601", "603", "605", "688")):
-        return f"1.{symbol}", "sh"
-    if symbol.startswith(("000", "001", "002", "003", "300", "301")):
-        return f"0.{symbol}", "sz"
-    raise InvalidSymbolError(symbol)
-
-
-def infer_board_secid(board: str) -> tuple[str, str]:
-    normalized = board.strip().upper()
-    if normalized.startswith("90."):
-        code = normalized[3:]
-    else:
-        code = normalized
-    if code.startswith("BK") and len(code) == 6 and code[2:].isdigit():
-        return f"90.{code}", code
-    raise InvalidBoardError(board)
 
 
 def _board_fs(board_type: str) -> str:

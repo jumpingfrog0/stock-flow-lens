@@ -78,21 +78,28 @@ class CacheService:
 
     def upsert_stock(self, stock: StockInfo, now: str | None = None) -> None:
         now = now or datetime.now(UTC).isoformat()
+        existing = self.db.get(Stock, stock.code)
+        name = stock.name
+        if existing and (not name or name == stock.code):
+            name = existing.name
+        industry = stock.industry
+        if existing and industry is None:
+            industry = existing.industry
         statement = insert(Stock).values(
             code=stock.code,
-            name=stock.name,
+            name=name,
             market=stock.market,
             secid=stock.secid,
-            industry=stock.industry,
+            industry=industry,
             updated_at=now,
         )
         statement = statement.on_conflict_do_update(
             index_elements=["code"],
             set_={
-                "name": stock.name,
+                "name": name,
                 "market": stock.market,
                 "secid": stock.secid,
-                "industry": stock.industry,
+                "industry": industry,
                 "updated_at": now,
             },
         )

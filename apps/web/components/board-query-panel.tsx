@@ -4,9 +4,10 @@ import { Plus, Search, X } from "lucide-react";
 import { FormEvent, useEffect, useState } from "react";
 
 import { ApiError, searchBoards } from "@/lib/api";
-import type { BoardSearchItem, BoardType } from "@/types/money-flow";
+import type { BoardSearchItem, BoardType, DataSource } from "@/types/money-flow";
 
 type BoardQueryPanelProps = {
+  source: DataSource;
   type: BoardType;
   startDate: string;
   endDate: string;
@@ -17,6 +18,7 @@ type BoardQueryPanelProps = {
 };
 
 export function BoardQueryPanel({
+  source,
   type,
   startDate,
   endDate,
@@ -36,7 +38,7 @@ export function BoardQueryPanel({
     setSuggestions([]);
     setSelectedBoards([]);
     setError(null);
-  }, [type]);
+  }, [source, type]);
 
   useEffect(() => {
     const trimmed = query.trim();
@@ -50,7 +52,7 @@ export function BoardQueryPanel({
     let isActive = true;
     setIsSearching(true);
     const timer = window.setTimeout(() => {
-      searchBoards({ type, q: trimmed, limit: 10 })
+      searchBoards({ type, source, q: trimmed, limit: 10 })
         .then((items) => {
           if (isActive) {
             setSuggestions(items);
@@ -74,7 +76,7 @@ export function BoardQueryPanel({
       isActive = false;
       window.clearTimeout(timer);
     };
-  }, [query, type]);
+  }, [query, source, type]);
 
   function addBoard(board: BoardSearchItem) {
     setSelectedBoards((current) => {

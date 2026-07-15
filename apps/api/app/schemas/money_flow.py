@@ -7,7 +7,7 @@ class MoneyFlowSummaryRequest(BaseModel):
     symbols: list[str] = Field(min_length=1)
     startDate: date
     endDate: date
-    source: str = "eastmoney"
+    source: str = "akshare"
 
     @field_validator("symbols")
     @classmethod
@@ -54,6 +54,7 @@ class MoneyFlowRange(BaseModel):
 
 
 class MoneyFlowSummaryResponse(BaseModel):
+    source: str
     range: MoneyFlowRange
     items: list[MoneyFlowItem]
     totalMainNetInflow: float
@@ -64,7 +65,7 @@ class MoneyFlowSummaryResponse(BaseModel):
 
 class MoneyFlowRefreshRecentRequest(BaseModel):
     symbols: list[str] = Field(min_length=1)
-    source: str = "eastmoney"
+    source: str = "akshare"
 
     @field_validator("symbols")
     @classmethod
@@ -84,6 +85,7 @@ class MoneyFlowRefreshRecentItem(BaseModel):
 
 
 class MoneyFlowRefreshRecentResponse(BaseModel):
+    source: str
     range: MoneyFlowRange
     items: list[MoneyFlowRefreshRecentItem]
     errors: list[MoneyFlowError] = []

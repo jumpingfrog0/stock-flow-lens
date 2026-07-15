@@ -16,10 +16,10 @@
 
 ```json
 {
+  "source": "akshare",
   "symbols": ["300308", "300502", "603986"],
   "startDate": "2026-06-08",
-  "endDate": "2026-07-07",
-  "source": "eastmoney"
+  "endDate": "2026-07-07"
 }
 ```
 
@@ -27,6 +27,7 @@
 
 ```json
 {
+  "source": "akshare",
   "range": {
     "startDate": "2026-06-08",
     "endDate": "2026-07-07"
@@ -71,8 +72,8 @@
 
 ```json
 {
-  "symbols": ["300308", "中际旭创"],
-  "source": "eastmoney"
+  "source": "akshare",
+  "symbols": ["300308", "中际旭创"]
 }
 ```
 
@@ -80,6 +81,7 @@
 
 ```json
 {
+  "source": "akshare",
   "range": {
     "startDate": "2026-07-01",
     "endDate": "2026-07-10"
@@ -121,14 +123,15 @@
 
 ## POST /api/stocks/refresh
 
-从 provider 搜索或列表能力刷新股票基础信息并 upsert 到本地。当前 EastMoney provider 未接入全市场列表时返回 `refreshed: 0`，保留可测试扩展 seam。
+从指定 provider 搜索或列表能力刷新股票基础信息并 upsert 到本地。默认使用 AKShare；EastMoney provider 当前未接入全市场列表，因此选择 `eastmoney` 时返回 `refreshed: 0`。
 
 请求：
 
 ```json
 {
   "query": "",
-  "limit": 500
+  "limit": 500,
+  "source": "akshare"
 }
 ```
 
@@ -136,7 +139,7 @@
 
 ```json
 {
-  "refreshed": 0
+  "refreshed": 500
 }
 ```
 
@@ -159,7 +162,7 @@
   "symbols": ["300308"],
   "startDate": "2026-07-01",
   "endDate": "2026-07-10",
-  "source": "eastmoney"
+  "source": "akshare"
 }
 ```
 
@@ -171,7 +174,7 @@
   "symbols": ["300308"],
   "startDate": "2026-07-01",
   "endDate": "2026-07-10",
-  "source": "eastmoney",
+  "source": "akshare",
   "createdAt": "2026-07-10T00:00:00+00:00"
 }
 ```
@@ -196,11 +199,12 @@
 - `type`：`industry` 或 `concept`。
 - `q`：搜索关键词，可为空。
 - `limit`：返回数量，默认 `20`，最大 `100`。
+- `source`：`akshare` 或 `eastmoney`，默认 `akshare`。
 
 示例：
 
 ```text
-GET /api/boards/search?type=industry&q=半导体&limit=20
+GET /api/boards/search?type=industry&q=半导体&limit=20&source=akshare
 ```
 
 响应：
@@ -213,7 +217,7 @@ GET /api/boards/search?type=industry&q=半导体&limit=20
     "type": "industry",
     "market": "board",
     "secid": "90.BK0475",
-    "source": "eastmoney"
+    "source": "akshare"
   }
 ]
 ```
@@ -226,11 +230,11 @@ GET /api/boards/search?type=industry&q=半导体&limit=20
 
 ```json
 {
+  "source": "akshare",
   "boards": ["BK0475", "BK0815"],
   "startDate": "2026-06-08",
   "endDate": "2026-07-07",
-  "type": "industry",
-  "source": "eastmoney"
+  "type": "industry"
 }
 ```
 
@@ -238,6 +242,7 @@ GET /api/boards/search?type=industry&q=半导体&limit=20
 
 ```json
 {
+  "source": "akshare",
   "range": {
     "startDate": "2026-06-08",
     "endDate": "2026-07-07"
@@ -258,7 +263,7 @@ GET /api/boards/search?type=industry&q=半导体&limit=20
           "largeInflow": 70000000,
           "mediumInflow": -30000000,
           "smallInflow": -90000000,
-          "closePrice": null,
+          "closePrice": 3210.55,
           "changePct": 1.23,
           "cumulativeMainNetInflow": 120000000
         }
@@ -278,9 +283,11 @@ GET /api/boards/search?type=industry&q=半导体&limit=20
 INVALID_SYMBOL
 AMBIGUOUS_SYMBOL
 STOCK_NOT_FOUND
+INVALID_SOURCE
 WATCHLIST_NOT_FOUND
 INVALID_BOARD
 INVALID_DATE_RANGE
+SOURCE_DATE_RANGE_UNSUPPORTED
 NO_DATA
 UPSTREAM_FAILED
 PARTIAL_FAILED
@@ -288,7 +295,7 @@ PARTIAL_FAILED
 
 HTTP 状态：
 
-- `400`：参数错误。
+- `400`：参数、数据源或来源可用日期范围错误。
 - `404`：单股票无数据。
-- `502`：东方财富失败且无缓存。
+- `502`：所选 provider 上游失败且无缓存。
 - `200`：多股票部分成功，失败项放入 `errors`。

@@ -6,7 +6,7 @@ from sqlalchemy.orm import Session
 
 from app.db.models import Stock
 from app.providers.base import MoneyFlowProvider, StockInfo
-from app.providers.eastmoney import infer_secid
+from app.providers.symbols import infer_secid
 from app.schemas.stocks import StockResponse
 from app.services.cache_service import CacheService
 from app.utils.errors import AmbiguousSymbolError, InvalidSymbolError, StockNotFoundError

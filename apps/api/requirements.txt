@@ -4,5 +4,6 @@ httpx
 pydantic
 pydantic-settings
 SQLAlchemy
+akshare==1.18.64
 pytest
 pytest-asyncio

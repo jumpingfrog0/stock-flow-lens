@@ -23,7 +23,7 @@ class BoardFlowSummaryRequest(BaseModel):
     startDate: date
     endDate: date
     type: BoardType
-    source: str = "eastmoney"
+    source: str = "akshare"
 
     @field_validator("boards")
     @classmethod

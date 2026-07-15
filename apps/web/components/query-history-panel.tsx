@@ -33,7 +33,7 @@ export function QueryHistoryPanel({ items, isLoading, onReuse }: QueryHistoryPan
                 <RotateCcw className="h-4 w-4 shrink-0 text-muted" aria-hidden="true" />
               </div>
               <div className="mt-1 text-xs text-muted">
-                {item.startDate} 至 {item.endDate}
+                {item.startDate} 至 {item.endDate} · {sourceLabel(item.source)}
               </div>
             </button>
           ))}
@@ -41,4 +41,8 @@ export function QueryHistoryPanel({ items, isLoading, onReuse }: QueryHistoryPan
       </div>
     </section>
   );
+}
+
+function sourceLabel(source: QueryHistoryItem["source"]): string {
+  return source === "akshare" ? "AKShare" : "东方财富直连";
 }

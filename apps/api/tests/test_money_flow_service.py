@@ -7,6 +7,7 @@ from sqlalchemy.orm import sessionmaker
 from app.db.models import Base
 from app.providers.base import MoneyFlowProvider, StockDailyFlow, StockDailyFlowResult
 from app.providers.eastmoney import infer_secid
+from app.services.cache_service import CacheService
 from app.services.money_flow_service import MoneyFlowService, direction_for
 from app.utils.errors import InvalidDateRangeError, InvalidSymbolError
 
@@ -81,6 +82,7 @@ async def test_summary_fetches_then_uses_cache():
     second = await service.get_summary(["300308"], date(2026, 7, 8), date(2026, 7, 9))
 
     assert provider.calls == 1
+    assert first.source == "eastmoney"
     assert first.items[0].mainNetInflow == 50.0
     assert second.items[0].daily[1].cumulativeMainNetInflow == 50.0
 
@@ -121,3 +123,30 @@ async def test_all_failed_symbols_preserve_first_error_type():
     service = MoneyFlowService(make_session(), FakeProvider())
     with pytest.raises(InvalidSymbolError):
         await service.get_summary(["123456"], date(2026, 7, 8), date(2026, 7, 9))
+
+
+@pytest.mark.asyncio
+async def test_complete_akshare_cache_does_not_call_provider():
+    db = make_session()
+    cached_result = StockDailyFlowResult(
+        code="300308",
+        name="中际旭创",
+        market="sz",
+        secid="0.300308",
+        source="akshare",
+        rows=[
+            make_flow_row(date(2026, 7, 8), 100.0),
+            make_flow_row(date(2026, 7, 9), -50.0),
+        ],
+    )
+    CacheService(db).upsert_provider_result(cached_result)
+    provider = FakeProvider()
+    provider.source = "akshare"
+
+    result = await MoneyFlowService(db, provider).get_summary(
+        ["300308"], date(2026, 7, 8), date(2026, 7, 9)
+    )
+
+    assert provider.calls == 0
+    assert result.source == "akshare"
+    assert result.items[0].mainNetInflow == 50.0

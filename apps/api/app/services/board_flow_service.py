@@ -45,6 +45,7 @@ class BoardFlowService:
 
         total = sum(item.mainNetInflow for item in items)
         return BoardFlowSummaryResponse(
+            source=self.provider.source,
             range=MoneyFlowRange(startDate=start_date, endDate=end_date),
             items=items,
             totalMainNetInflow=total,

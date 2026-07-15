@@ -3,6 +3,7 @@ import { utils, writeFile } from "xlsx";
 import type { MoneyFlowSummaryResponse } from "@/types/money-flow";
 
 const COLUMNS = [
+  "source",
   "code",
   "name",
   "tradeDate",
@@ -19,6 +20,7 @@ const COLUMNS = [
 export function exportMoneyFlowExcel(data: MoneyFlowSummaryResponse): void {
   const rows = data.items.flatMap((item) =>
     item.daily.map((daily) => ({
+      source: data.source,
       code: item.code,
       name: item.name,
       tradeDate: daily.tradeDate,
@@ -35,5 +37,5 @@ export function exportMoneyFlowExcel(data: MoneyFlowSummaryResponse): void {
   const worksheet = utils.json_to_sheet(rows, { header: COLUMNS });
   const workbook = utils.book_new();
   utils.book_append_sheet(workbook, worksheet, "money-flow");
-  writeFile(workbook, `stock-flow-lens_${data.range.startDate}_${data.range.endDate}.xlsx`);
+  writeFile(workbook, `stock-flow-lens_${data.source}_${data.range.startDate}_${data.range.endDate}.xlsx`);
 }

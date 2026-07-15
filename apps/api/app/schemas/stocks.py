@@ -13,6 +13,7 @@ class StockResponse(BaseModel):
 class StockRefreshRequest(BaseModel):
     query: str = ""
     limit: int = Field(default=500, ge=1, le=5000)
+    source: str = "akshare"
 
 
 class StockRefreshResponse(BaseModel):

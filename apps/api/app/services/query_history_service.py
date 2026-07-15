@@ -17,7 +17,7 @@ class QueryHistoryService:
         return [history_to_response(row) for row in self.db.scalars(statement).all()]
 
     def create(
-        self, symbols: list[str], start_date: date, end_date: date, source: str = "eastmoney"
+        self, symbols: list[str], start_date: date, end_date: date, source: str = "akshare"
     ) -> QueryHistoryResponse:
         now = datetime.now(UTC).isoformat()
         row = QueryHistory(
@@ -40,6 +40,16 @@ class QueryHistoryService:
                 if symbol not in symbols:
                     symbols.append(symbol)
         return symbols
+
+    def recent_symbol_sources(self, limit: int = 50) -> list[tuple[str, str]]:
+        pairs: list[tuple[str, str]] = []
+        statement = select(QueryHistory).order_by(QueryHistory.created_at.desc()).limit(limit)
+        for row in self.db.scalars(statement).all():
+            for symbol in _loads_symbols(row.symbols):
+                pair = (symbol, row.source)
+                if pair not in pairs:
+                    pairs.append(pair)
+        return pairs
 
 
 def history_to_response(row: QueryHistory) -> QueryHistoryResponse:

@@ -1,4 +1,5 @@
 export type Direction = "inflow" | "outflow" | "flat";
+export type DataSource = "akshare" | "eastmoney";
 
 export type DailyMoneyFlow = {
   tradeDate: string;
@@ -29,6 +30,7 @@ export type MoneyFlowError = {
 };
 
 export type MoneyFlowSummaryResponse = {
+  source: DataSource;
   range: {
     startDate: string;
     endDate: string;
@@ -44,12 +46,12 @@ export type MoneyFlowSummaryRequest = {
   symbols: string[];
   startDate: string;
   endDate: string;
-  source: "eastmoney";
+  source: DataSource;
 };
 
 export type MoneyFlowRefreshRecentRequest = {
   symbols: string[];
-  source: "eastmoney";
+  source: DataSource;
 };
 
 export type MoneyFlowRefreshRecentItem = {
@@ -59,6 +61,7 @@ export type MoneyFlowRefreshRecentItem = {
 };
 
 export type MoneyFlowRefreshRecentResponse = {
+  source: DataSource;
   range: {
     startDate: string;
     endDate: string;
@@ -79,6 +82,7 @@ export type StockSearchItem = {
 export type StockRefreshRequest = {
   query?: string;
   limit?: number;
+  source?: DataSource;
 };
 
 export type StockRefreshResponse = {
@@ -90,7 +94,7 @@ export type QueryHistoryItem = {
   symbols: string[];
   startDate: string;
   endDate: string;
-  source: string;
+  source: DataSource;
   createdAt: string;
 };
 
@@ -98,7 +102,7 @@ export type QueryHistoryCreateRequest = {
   symbols: string[];
   startDate: string;
   endDate: string;
-  source: "eastmoney";
+  source: DataSource;
 };
 
 export type WatchlistItem = {
@@ -123,7 +127,7 @@ export type BoardSearchItem = {
   type: BoardType;
   market: string;
   secid: string;
-  source: "eastmoney";
+  source: DataSource;
 };
 
 export type BoardFlowSummaryRequest = {
@@ -131,7 +135,7 @@ export type BoardFlowSummaryRequest = {
   startDate: string;
   endDate: string;
   type: BoardType;
-  source: "eastmoney";
+  source: DataSource;
 };
 
 export type BoardFlowSummaryResponse = MoneyFlowSummaryResponse;

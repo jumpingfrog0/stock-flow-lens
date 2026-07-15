@@ -10,10 +10,12 @@ from app.providers.base import (
     BoardSearchResult,
     MoneyFlowProvider,
 )
+from app.utils.errors import InvalidSourceError
 
 
 class FakeRouteBoardProvider(MoneyFlowProvider):
-    source = "eastmoney"
+    def __init__(self, source="eastmoney"):
+        self.source = source
 
     async def fetch_stock_daily_flow(self, symbol, start_date, end_date):
         raise NotImplementedError
@@ -54,7 +56,16 @@ class FakeRouteBoardProvider(MoneyFlowProvider):
 
 
 def make_client(monkeypatch):
-    monkeypatch.setattr(board_flow, "EastMoneyProvider", FakeRouteBoardProvider)
+    def fake_factory(source):
+        if source not in {"akshare", "eastmoney"}:
+            raise InvalidSourceError(source)
+        return FakeRouteBoardProvider(source)
+
+    monkeypatch.setattr(
+        board_flow,
+        "create_provider",
+        fake_factory,
+    )
     app = FastAPI()
     app.include_router(board_flow.boards_router)
     app.include_router(board_flow.board_flow_router)
@@ -68,6 +79,7 @@ def test_search_boards_route(monkeypatch):
 
     assert response.status_code == 200
     assert response.json()[0]["code"] == "BK0475"
+    assert response.json()[0]["source"] == "akshare"
 
 
 def test_board_flow_summary_route(monkeypatch):
@@ -88,3 +100,22 @@ def test_board_flow_summary_route(monkeypatch):
     body = response.json()
     assert body["items"][0]["mainNetInflow"] == 100.0
     assert body["totalDirection"] == "inflow"
+    assert body["source"] == "eastmoney"
+
+
+def test_board_flow_rejects_invalid_source(monkeypatch):
+    client = make_client(monkeypatch)
+
+    response = client.post(
+        "/api/board-flow/summary",
+        json={
+            "boards": ["BK0475"],
+            "startDate": "2026-07-09",
+            "endDate": "2026-07-09",
+            "type": "industry",
+            "source": "unknown",
+        },
+    )
+
+    assert response.status_code == 400
+    assert response.json()["detail"]["errorCode"] == "INVALID_SOURCE"

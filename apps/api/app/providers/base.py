@@ -68,7 +68,7 @@ class BoardDailyFlowResult:
 
 
 class MoneyFlowProvider(ABC):
-    source = "eastmoney"
+    source = ""
 
     @abstractmethod
     async def fetch_stock_daily_flow(

@@ -3,6 +3,7 @@ import type {
   BoardFlowSummaryResponse,
   BoardSearchItem,
   BoardType,
+  DataSource,
   MoneyFlowSummaryRequest,
   MoneyFlowSummaryResponse,
   MoneyFlowRefreshRecentRequest,
@@ -148,11 +149,13 @@ export async function deleteWatchlistItem(id: number, symbol: string): Promise<W
 
 export async function searchBoards(params: {
   type: BoardType;
+  source: DataSource;
   q?: string;
   limit?: number;
 }): Promise<BoardSearchItem[]> {
   const searchParams = new URLSearchParams({
     type: params.type,
+    source: params.source,
     q: params.q || "",
     limit: String(params.limit || 20),
   });
