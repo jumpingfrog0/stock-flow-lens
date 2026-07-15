@@ -1,0 +1,25 @@
+start.sh
+  s_763004f6ece7c8::t_d6769490667ece 1-79
+README.md
+  s_763004f6ece7c8::t_856a8f4e9f3fa9 8,10-11,13,16-18
+  s_763004f6ece7c8::t_d6769490667ece 7,9,12,14-15
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.12",
+  "base_commit_sha": "c536114296c9ad1c133009361662035bcb12d40e",
+  "prompts": {},
+  "logical_commit_id": "c536114296c9ad1c133009361662035bcb12d40e",
+  "sessions": {
+    "s_763004f6ece7c8": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019f4aff-2032-7a31-b7f5-670f1121fa4b",
+        "model": "gpt-5.6-terra"
+      },
+      "human_author": "jumpingfrog0 <jumpingfrog0@gmail.com>",
+      "total_additions": 258,
+      "total_deletions": 167
+    }
+  }
+}
