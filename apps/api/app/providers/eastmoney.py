@@ -18,7 +18,15 @@ from app.utils.errors import InvalidBoardError, NoDataError, UpstreamError
 
 
 EASTMONEY_FLOW_URL = "https://push2his.eastmoney.com/api/qt/stock/fflow/daykline/get"
+EASTMONEY_DELAY_FLOW_URL = (
+    "https://push2delay.eastmoney.com/api/qt/stock/fflow/daykline/get"
+)
 EASTMONEY_BOARD_LIST_URL = "https://push2.eastmoney.com/api/qt/clist/get"
+EASTMONEY_DELAY_BOARD_LIST_URL = "https://push2delay.eastmoney.com/api/qt/clist/get"
+EASTMONEY_FALLBACK_URLS = {
+    EASTMONEY_FLOW_URL: EASTMONEY_DELAY_FLOW_URL,
+    EASTMONEY_BOARD_LIST_URL: EASTMONEY_DELAY_BOARD_LIST_URL,
+}
 BOARD_TYPE_FS = {
     "industry": "m:90+t:2",
     "concept": "m:90+t:3",
@@ -188,15 +196,25 @@ async def _get_json_with_retry(
         timeout=settings.eastmoney_timeout_seconds,
         trust_env=False,
     ) as client:
-        for attempt in range(3):
-            try:
-                response = await client.get(url, params=params, headers=headers)
-                response.raise_for_status()
-                return response.json()
-            except (httpx.HTTPError, ValueError) as exc:
-                last_error = exc
-                if attempt < 2:
-                    await asyncio.sleep(0.4 * (attempt + 1))
+        candidate_urls = (
+            (url, EASTMONEY_FALLBACK_URLS[url])
+            if url in EASTMONEY_FALLBACK_URLS
+            else (url,)
+        )
+        for candidate_url in candidate_urls:
+            for attempt in range(3):
+                try:
+                    response = await client.get(
+                        candidate_url,
+                        params=params,
+                        headers=headers,
+                    )
+                    response.raise_for_status()
+                    return response.json()
+                except (httpx.HTTPError, ValueError) as exc:
+                    last_error = exc
+                    if attempt < 2:
+                        await asyncio.sleep(0.4 * (attempt + 1))
     if last_error:
         raise last_error
     raise UpstreamError("东方财富接口请求失败")

@@ -6,6 +6,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.api.routes.board_flow import board_flow_router, boards_router
 from app.api.routes.money_flow import router as money_flow_router
 from app.api.routes.query_history import router as query_history_router
+from app.api.routes.stock_analysis import router as stock_analysis_router
 from app.api.routes.stocks import router as stocks_router
 from app.api.routes.watchlists import router as watchlists_router
 from app.core.config import settings
@@ -48,3 +49,4 @@ app.include_router(query_history_router)
 app.include_router(watchlists_router)
 app.include_router(boards_router)
 app.include_router(board_flow_router)
+app.include_router(stock_analysis_router)

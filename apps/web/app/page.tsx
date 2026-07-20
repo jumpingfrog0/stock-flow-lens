@@ -11,6 +11,7 @@ import { MoneyFlowBarChart } from "@/components/money-flow-bar-chart";
 import { QueryForm } from "@/components/query-form";
 import { QueryHistoryPanel } from "@/components/query-history-panel";
 import { SummaryTable } from "@/components/summary-table";
+import { StockAnalysisPanel } from "@/components/stock-analysis-panel";
 import { WatchlistPanel } from "@/components/watchlist-panel";
 import {
   addWatchlistItem,
@@ -22,6 +23,7 @@ import {
   fetchBoardFlowSummary,
   fetchMoneyFlowSummary,
   fetchQueryHistory,
+  fetchStockMoveAnalysis,
   fetchWatchlists,
   refreshRecentMoneyFlow,
   updateWatchlist,
@@ -36,6 +38,7 @@ import type {
   QueryHistoryItem,
   Watchlist,
 } from "@/types/money-flow";
+import type { StockMoveAnalysisResponse } from "@/types/stock-analysis";
 
 type WorkspaceMode = "stock" | BoardType;
 
@@ -71,6 +74,9 @@ export default function HomePage() {
   const [isHistoryLoading, setIsHistoryLoading] = useState(false);
   const [isWatchlistsLoading, setIsWatchlistsLoading] = useState(false);
   const [lastStockQuery, setLastStockQuery] = useState<StockQuery | null>(null);
+  const [analysis, setAnalysis] = useState<StockMoveAnalysisResponse | null>(null);
+  const [isAnalysisLoading, setIsAnalysisLoading] = useState(false);
+  const [analysisError, setAnalysisError] = useState<string | null>(null);
 
   const selectedItem = data?.items.find((item) => item.code === selectedCode) ?? data?.items[0] ?? null;
   const resultLabel = TABS.find((tab) => tab.value === resultMode)?.label ?? "个股";
@@ -123,6 +129,8 @@ export default function HomePage() {
       });
       setData(response);
       setSelectedCode(response.items[0]?.code ?? null);
+      setAnalysis(null);
+      setAnalysisError(null);
       setResultMode("stock");
       setLastStockQuery({
         symbols,
@@ -171,6 +179,8 @@ export default function HomePage() {
       });
       setData(response);
       setSelectedCode(response.items[0]?.code ?? null);
+      setAnalysis(null);
+      setAnalysisError(null);
       setResultMode(type);
     } catch (err) {
       setData(null);
@@ -218,6 +228,8 @@ export default function HomePage() {
     setData(null);
     setSelectedCode(null);
     setLastStockQuery(null);
+    setAnalysis(null);
+    setAnalysisError(null);
     setError(null);
     setSideError(null);
   }
@@ -271,6 +283,22 @@ export default function HomePage() {
     setMode("stock");
     setRawSymbols(symbols.join("\n"));
     void handleStockSubmit(symbols, startDate, endDate);
+  }
+
+  async function handleAnalyzeStock() {
+    if (!selectedItem || resultMode !== "stock") {
+      return;
+    }
+    setIsAnalysisLoading(true);
+    setAnalysisError(null);
+    try {
+      setAnalysis(await fetchStockMoveAnalysis(selectedItem.code));
+    } catch (err) {
+      setAnalysis(null);
+      setAnalysisError(errorMessage(err, "股票涨跌归因失败，请稍后重试"));
+    } finally {
+      setIsAnalysisLoading(false);
+    }
   }
 
   return (
@@ -405,8 +433,21 @@ export default function HomePage() {
             <SummaryTable
               items={data.items}
               selectedCode={selectedItem.code}
-              onSelect={(code) => setSelectedCode(code)}
+              onSelect={(code) => {
+                setSelectedCode(code);
+                setAnalysis(null);
+                setAnalysisError(null);
+              }}
             />
+            {resultMode === "stock" ? (
+              <StockAnalysisPanel
+                code={selectedItem.code}
+                data={analysis}
+                isLoading={isAnalysisLoading}
+                error={analysisError}
+                onAnalyze={handleAnalyzeStock}
+              />
+            ) : null}
             <div className="grid gap-5 xl:grid-cols-2">
               <MoneyFlowBarChart item={selectedItem} />
               <CumulativeLineChart item={selectedItem} />

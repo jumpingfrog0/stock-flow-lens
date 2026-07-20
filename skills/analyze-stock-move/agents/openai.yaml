@@ -1,0 +1,4 @@
+interface:
+  display_name: "股票涨跌归因"
+  short_description: "按市场风格、行业共振、个股证据和反事实检验分析A股涨跌驱动"
+  default_prompt: "Use $analyze-stock-move to analyze the latest drivers of an A-share stock move with evidence and counterfactual checks."

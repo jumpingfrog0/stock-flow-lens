@@ -277,6 +277,80 @@ GET /api/boards/search?type=industry&q=半导体&limit=20&source=akshare
 }
 ```
 
+## POST /api/stock-analysis/attribution
+
+自动分析最新交易日的股票涨跌驱动。程序严格按全市场、风格、行业、个股和公告顺序收集证据，
+并返回规则评分与反事实检验。该接口固定使用东方财富实时行情，不读取请求中的资金流 `source`。
+
+请求：
+
+```json
+{
+  "symbol": "002714"
+}
+```
+
+核心响应：
+
+```json
+{
+  "source": "eastmoney",
+  "asOf": "2026-07-15",
+  "primaryDriver": "market_rotation",
+  "confidence": "high",
+  "summary": "市场风格切换是一级驱动，行业共振与个股交易结构是放大因素。",
+  "stock": {
+    "code": "002714",
+    "name": "牧原股份",
+    "tradeDate": "2026-07-15",
+    "industry": "养殖业",
+    "styleBucket": "defensive_value",
+    "closePrice": 39.65,
+    "changePct": 4.12,
+    "mainNetInflow": 225774032,
+    "marketRelativePct": 5.09,
+    "industryRelativePct": 2.77
+  },
+  "style": {
+    "rotation": "high_to_low",
+    "growthProxyChangePct": -2.73,
+    "valueProxyChangePct": 0.095,
+    "valueMinusGrowthPct": 2.825,
+    "note": "成长代理指数走弱且价值代理显著占优，市场存在高低切换特征"
+  },
+  "drivers": [
+    {
+      "code": "market_rotation",
+      "label": "市场风格切换",
+      "score": 100,
+      "evidence": ["价值与成长代理涨跌差达到 2.83 个百分点"],
+      "limitations": []
+    }
+  ],
+  "counterfactuals": [
+    {
+      "code": "same_day_announcement",
+      "result": "weakens",
+      "conclusion": "当日无新增公司公告，不应把旧公告当作直接催化"
+    }
+  ],
+  "warnings": ["归因基于可观测行情和规则评分，不代表已知每笔交易的真实动机"]
+}
+```
+
+`primaryDriver` 可能值：
+
+```text
+market_rotation
+industry_move
+stock_specific
+mixed
+insufficient
+```
+
+评分用于比较三类解释的证据强弱，不是上涨概率或投资评级。实时资金流缺失且盘中资金流尚未
+更新时，接口不会把上一交易日资金流用于当日归因，而会在 `warnings` 返回具体原因。
+
 ## 错误码
 
 ```text

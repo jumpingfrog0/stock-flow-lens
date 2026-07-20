@@ -51,7 +51,35 @@ https://push2his.eastmoney.com/api/qt/stock/fflow/daykline/get
 https://push2.eastmoney.com/api/qt/clist/get
 ```
 
-请求失败时，同一组参数最多重试 3 次。超时由
+股票涨跌归因额外使用：
+
+```text
+https://push2.eastmoney.com/api/qt/stock/get
+https://push2.eastmoney.com/api/qt/clist/get
+https://push2delay.eastmoney.com/api/qt/stock/get
+https://push2delay.eastmoney.com/api/qt/clist/get
+https://push2delay.eastmoney.com/api/qt/stock/fflow/kline/get
+https://np-anotice-stock.eastmoney.com/api/security/ann
+```
+
+归因接口读取股票快照、主要指数、全市场涨跌家数、股票所属行业、行业成分股和最近公司公告。
+行业由股票快照的行业名称自动匹配东方财富行业板块，不要求前端手工输入。
+
+风格代理固定为：
+
+```text
+成长：创业板指、科创50
+价值：沪深300、上证50
+```
+
+当成长代理为负且“价值减成长”不低于 1.5 个百分点时，标记为 `high_to_low`；反方向满足
+对称条件时标记为 `low_to_high`。行业关键词仅用于判断风格切换是否与股票行业相符，属于启发式
+分类，不是正式指数归属。
+
+程序会比较同行同向比例、行业资金、个股相对行业收益和当日公告。任一非关键接口失败时返回部分
+结果和 `warnings`；股票行情本身不可用时返回上游错误。
+
+主域名失败时自动降级到东方财富延迟域名；每个候选域名最多重试 3 次。超时由
 `STOCK_FLOW_EASTMONEY_TIMEOUT_SECONDS` 控制，默认 12 秒。
 
 `secid` 推导：
