@@ -1,0 +1,73 @@
+apps/api/tests/test_eastmoney_fallback.py
+  s_d3fe70ddeea0fc::t_0fafaa6040eb45 1-56
+docs/api.md
+  s_d3fe70ddeea0fc::t_6b1e9eaaa1de4d 312,317-318,326,351-352
+  s_d3fe70ddeea0fc::t_b559f68a1d3814 280-311,313-316,319-325,327-350,353
+apps/api/app/providers/stock_attribution.py
+  s_d3fe70ddeea0fc::t_8fe5bffd693c65 128,135-140
+  s_d3fe70ddeea0fc::t_83bab27a6b0cac 242-260,437-440,442-447,452,550-553
+  s_d3fe70ddeea0fc::t_9a1db52e3e2ecc 230
+  s_d3fe70ddeea0fc::t_0c23a034523500 2
+  s_d3fe70ddeea0fc::t_ac0a8ce2c0a71a 133,142,144-165,187-192
+  s_d3fe70ddeea0fc::t_267f12c810b817 17,19,21-23,143,169-170,174-180,182,223,225,268,413,415,453-466,554-559,561
+  s_d3fe70ddeea0fc::t_1a29622d8350fc 1,3-16,18,20,24-28,30-119,123-127,129-132,134,141,166-168,171-173,181,183-186,193-222,224,226-229,231-241,261-267,269-412,414,416-433,436,504-549,560,562-568
+  s_d3fe70ddeea0fc::t_2467c2c42264ce 29,120-122,434-435,441,448-451,467-503
+skills/analyze-stock-move/scripts/analyze_stock.py
+  s_d3fe70ddeea0fc::t_ebb4a292bb15a9 1-53
+skills/analyze-stock-move/SKILL.md
+  s_d3fe70ddeea0fc::t_ebb4a292bb15a9 3,8-56
+  s_d3fe70ddeea0fc::t_07249d6335c250 1-2,4-7
+apps/web/types/stock-analysis.ts
+  s_d3fe70ddeea0fc::t_2fd6be585d2599 1-94
+skills/analyze-stock-move/references/methodology.md
+  s_d3fe70ddeea0fc::t_ebb4a292bb15a9 1-16,20-42
+  s_d3fe70ddeea0fc::t_6dde35720394b0 17-19
+apps/api/tests/test_stock_analysis_service.py
+  s_d3fe70ddeea0fc::t_e7f43a7c9cb4f2 1-19,21-160
+  s_d3fe70ddeea0fc::t_6dff58b5de49c2 20,161-180
+apps/api/app/providers/eastmoney.py
+  s_d3fe70ddeea0fc::t_0fafaa6040eb45 199-203
+  s_d3fe70ddeea0fc::t_1977574e4cd645 21-23,25-29,204-217
+apps/web/components/stock-analysis-panel.tsx
+  s_d3fe70ddeea0fc::t_2fd6be585d2599 1-168
+apps/api/app/api/routes/stock_analysis.py
+  s_d3fe70ddeea0fc::t_eaa166a75ff304 1-36
+apps/api/app/services/stock_analysis_service.py
+  s_d3fe70ddeea0fc::t_371c6bbeba61a2 1-240,246-408,410,412-457,472-494
+  s_d3fe70ddeea0fc::t_6dff58b5de49c2 241-245,409,411,458-471
+apps/api/tests/test_stock_attribution_provider.py
+  s_d3fe70ddeea0fc::t_e7f43a7c9cb4f2 1,3,5,11,13-28
+  s_d3fe70ddeea0fc::t_ce19c5318ef419 2,4,6-10,12,29-62
+apps/web/lib/api.ts
+  s_d3fe70ddeea0fc::t_2fd6be585d2599 18,179-192
+apps/web/app/page.tsx
+  s_d3fe70ddeea0fc::t_2fd6be585d2599 14,26,41,77-79,132-133,182-183,231-232,288-303,436-440,442-450
+apps/api/app/schemas/stock_analysis.py
+  s_d3fe70ddeea0fc::t_1a29622d8350fc 1-120
+skills/analyze-stock-move/agents/openai.yaml
+  s_d3fe70ddeea0fc::t_07249d6335c250 1-4
+docs/data-source.md
+  s_d3fe70ddeea0fc::t_b559f68a1d3814 54-58,62-81
+  s_d3fe70ddeea0fc::t_6b1e9eaaa1de4d 59-61,82
+apps/api/app/main.py
+  s_d3fe70ddeea0fc::t_eaa166a75ff304 9,52
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.15",
+  "base_commit_sha": "e59d86a9c1d1c8380845fe68fdd9584b838054cb",
+  "prompts": {},
+  "logical_commit_id": "e59d86a9c1d1c8380845fe68fdd9584b838054cb",
+  "sessions": {
+    "s_d3fe70ddeea0fc": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019f5ed6-93af-7b33-aeed-23811528f601",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "jumpingfrog0 <jumpingfrog0@gmail.com>",
+      "total_additions": 2280,
+      "total_deletions": 169
+    }
+  }
+}
