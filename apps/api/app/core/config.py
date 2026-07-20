@@ -8,7 +8,7 @@ DEFAULT_DB_PATH = PROJECT_ROOT / "data" / "stock-flow.db"
 
 
 class Settings(BaseSettings):
-    app_name: str = "资金流透镜"
+    app_name: str = "A股研究工具箱"
     database_url: str = f"sqlite:///{DEFAULT_DB_PATH}"
     default_source: str = "akshare"
     eastmoney_timeout_seconds: float = 12.0

@@ -1,13 +1,10 @@
 from statistics import mean
 
-from sqlalchemy.orm import Session
-
-from app.providers.stock_attribution import (
+from app.modules.stock_move_attribution.evidence import (
     IndexSnapshot,
     StockAttributionContext,
-    StockAttributionProvider,
 )
-from app.schemas.stock_analysis import (
+from app.modules.stock_move_attribution.schemas import (
     AnnouncementItem,
     CounterfactualCheck,
     DriverEvidence,
@@ -15,11 +12,13 @@ from app.schemas.stock_analysis import (
     MarketBenchmark,
     MarketBreadth,
     MarketContext,
-    StockMoveAnalysisResponse,
+    StockMoveAttributionResponse,
     StockMoveSnapshot,
     StyleContext,
 )
-from app.services.stock_service import StockService
+
+
+METHODOLOGY_VERSION = "1.0.0"
 
 
 GROWTH_INDUSTRY_KEYWORDS = (
@@ -48,14 +47,10 @@ DEFENSIVE_VALUE_INDUSTRY_KEYWORDS = (
 )
 
 
-class StockAnalysisService:
-    def __init__(self, db: Session, provider: StockAttributionProvider):
-        self.stocks = StockService(db)
-        self.provider = provider
+class StockMoveAttributionEngine:
+    """Deterministic and side-effect-free stock move attribution rules."""
 
-    async def analyze(self, symbol: str) -> StockMoveAnalysisResponse:
-        code = self.stocks.resolve_symbol(symbol)
-        context = await self.provider.fetch_context(code)
+    def analyze(self, context: StockAttributionContext) -> StockMoveAttributionResponse:
         stock = context.stock
         index_map = {item.key: item for item in context.indexes}
         benchmark = _select_benchmark(stock.code, index_map)
@@ -98,8 +93,9 @@ class StockAnalysisService:
             style_bucket=style_bucket,
             announcements=announcements,
         )
-        return StockMoveAnalysisResponse(
-            source=self.provider.source,
+        return StockMoveAttributionResponse(
+            methodologyVersion=METHODOLOGY_VERSION,
+            source=context.source,
             asOf=stock.trade_date,
             primaryDriver=primary_driver,
             confidence=confidence,

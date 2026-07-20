@@ -3,7 +3,7 @@ from typing import Literal
 
 from pydantic import BaseModel, Field, field_validator
 
-from app.schemas.money_flow import MoneyFlowSummaryResponse
+from app.modules.money_flow.schemas import MoneyFlowSummaryResponse
 
 
 BoardType = Literal["industry", "concept"]

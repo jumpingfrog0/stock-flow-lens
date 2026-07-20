@@ -4,7 +4,7 @@ import logging
 from app.core.config import settings
 from app.db.session import create_session
 from app.providers.factory import create_provider
-from app.services.money_flow_service import MoneyFlowService
+from app.modules.money_flow.service import MoneyFlowService
 from app.services.query_history_service import QueryHistoryService
 from app.services.watchlist_service import WatchlistService
 from app.utils.errors import InvalidSourceError

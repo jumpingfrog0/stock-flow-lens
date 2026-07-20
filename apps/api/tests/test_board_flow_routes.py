@@ -3,7 +3,7 @@ from datetime import date
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
 
-from app.api.routes import board_flow
+from app.modules.money_flow import board_routes as board_flow
 from app.providers.base import (
     BoardDailyFlow,
     BoardDailyFlowResult,

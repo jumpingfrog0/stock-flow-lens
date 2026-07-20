@@ -6,8 +6,8 @@ import pytest
 from app.providers import akshare as akshare_module
 from app.providers.akshare import AkShareProvider
 from app.providers.factory import create_provider
-from app.schemas.board_flow import BoardFlowSummaryRequest
-from app.schemas.money_flow import MoneyFlowSummaryRequest
+from app.modules.money_flow.board_schemas import BoardFlowSummaryRequest
+from app.modules.money_flow.schemas import MoneyFlowSummaryRequest
 from app.schemas.stocks import StockRefreshRequest
 from app.utils.errors import (
     InvalidSourceError,

@@ -9,7 +9,7 @@ from app.providers.base import (
     MoneyFlowProvider,
 )
 from app.providers.eastmoney import infer_board_secid
-from app.services.board_flow_service import BoardFlowService
+from app.modules.money_flow.board_service import BoardFlowService
 from app.utils.errors import InvalidBoardError, NoDataError, UpstreamError
 
 

@@ -3,8 +3,8 @@ from unittest.mock import AsyncMock
 
 import pytest
 
-from app.providers.stock_attribution import (
-    StockAttributionProvider,
+from app.modules.stock_move_attribution.evidence import (
+    StockMoveEvidenceProvider,
     _match_board,
     _quote_trade_date,
 )
@@ -30,7 +30,7 @@ def test_quote_trade_date_uses_shanghai_timezone():
 
 @pytest.mark.asyncio
 async def test_quote_main_flow_is_used_when_daily_flow_endpoint_fails(monkeypatch):
-    provider = StockAttributionProvider()
+    provider = StockMoveEvidenceProvider()
     monkeypatch.setattr(
         provider,
         "_fetch_quote",

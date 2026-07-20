@@ -3,13 +3,13 @@ from sqlalchemy.orm import Session
 
 from app.db.session import get_db
 from app.providers.factory import create_provider
-from app.schemas.money_flow import (
+from app.modules.money_flow.schemas import (
     MoneyFlowRefreshRecentRequest,
     MoneyFlowRefreshRecentResponse,
     MoneyFlowSummaryRequest,
     MoneyFlowSummaryResponse,
 )
-from app.services.money_flow_service import MoneyFlowService
+from app.modules.money_flow.service import MoneyFlowService
 from app.utils.errors import (
     AppError,
     InvalidDateRangeError,

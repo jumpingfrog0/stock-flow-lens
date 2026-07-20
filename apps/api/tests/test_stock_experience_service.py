@@ -7,7 +7,7 @@ from sqlalchemy.orm import sessionmaker
 from app.db.models import Base, QueryHistory, Stock
 from app.providers.base import MoneyFlowProvider, StockDailyFlow, StockDailyFlowResult, StockInfo
 from app.services.cache_service import CacheService
-from app.services.money_flow_service import MoneyFlowService
+from app.modules.money_flow.service import MoneyFlowService
 from app.services.query_history_service import QueryHistoryService
 from app.services.stock_service import StockService
 from app.services.watchlist_service import WatchlistService

@@ -8,7 +8,7 @@ from app.db.models import Base
 from app.providers.base import MoneyFlowProvider, StockDailyFlow, StockDailyFlowResult
 from app.providers.eastmoney import infer_secid
 from app.services.cache_service import CacheService
-from app.services.money_flow_service import MoneyFlowService, direction_for
+from app.modules.money_flow.service import MoneyFlowService, direction_for
 from app.utils.errors import InvalidDateRangeError, InvalidSymbolError
 
 

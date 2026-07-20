@@ -2,8 +2,8 @@ from types import SimpleNamespace
 
 import pytest
 
-from app.services import auto_refresh_service as auto_refresh_module
-from app.services.auto_refresh_service import AutoRefreshService
+from app.modules.money_flow import auto_refresh as auto_refresh_module
+from app.modules.money_flow.auto_refresh import AutoRefreshService
 from app.utils.errors import InvalidSourceError
 
 

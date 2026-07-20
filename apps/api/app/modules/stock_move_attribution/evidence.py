@@ -1,32 +1,29 @@
 import asyncio
-import json
 from dataclasses import dataclass
 from datetime import date, datetime
 from statistics import median
 from typing import Any
 from zoneinfo import ZoneInfo
 
-import httpx
-
-from app.core.config import settings
+from app.infrastructure.eastmoney.client import (
+    ANNOUNCEMENT_URL,
+    DELAY_FLOW_URL,
+    DELAY_LIST_URL,
+    DELAY_QUOTE_URL,
+    FLOW_URL,
+    INTRADAY_FLOW_URL,
+    LIST_URL,
+    QUOTE_URL,
+    EastMoneyHttpClient,
+)
 from app.providers.symbols import infer_secid
 from app.utils.errors import NoDataError, UpstreamError
 
 
-EASTMONEY_QUOTE_URL = "https://push2.eastmoney.com/api/qt/stock/get"
-EASTMONEY_DELAY_QUOTE_URL = "https://push2delay.eastmoney.com/api/qt/stock/get"
-EASTMONEY_LIST_URL = "https://push2.eastmoney.com/api/qt/clist/get"
-EASTMONEY_DELAY_LIST_URL = "https://push2delay.eastmoney.com/api/qt/clist/get"
-EASTMONEY_FLOW_URL = "https://push2his.eastmoney.com/api/qt/stock/fflow/daykline/get"
-EASTMONEY_INTRADAY_FLOW_URL = (
-    "https://push2delay.eastmoney.com/api/qt/stock/fflow/kline/get"
-)
-EASTMONEY_ANNOUNCEMENT_URL = "https://np-anotice-stock.eastmoney.com/api/security/ann"
 EASTMONEY_TOKEN = "bd1d9ddb04089700cf9c27f6f7426281"
 SHANGHAI_TZ = ZoneInfo("Asia/Shanghai")
 PAGE_SIZE = 100
 ALL_A_SHARE_FILTER = "m:0+t:6,m:0+t:80,m:1+t:2,m:1+t:23"
-_FORCE_CURL_TRANSPORT = False
 
 INDEX_DEFINITIONS = (
     ("shanghai", "1.000001", "上证指数", "market"),
@@ -95,6 +92,7 @@ class AnnouncementSnapshot:
 
 @dataclass(frozen=True)
 class StockAttributionContext:
+    source: str
     stock: StockSnapshot
     indexes: list[IndexSnapshot]
     breadth: MarketBreadthSnapshot | None
@@ -103,20 +101,12 @@ class StockAttributionContext:
     warnings: list[str]
 
 
-class StockAttributionProvider:
+class StockMoveEvidenceProvider:
     source = "eastmoney"
 
     async def fetch_context(self, symbol: str) -> StockAttributionContext:
         secid, _ = infer_secid(symbol)
-        headers = {
-            "User-Agent": "Mozilla/5.0",
-            "Referer": "https://quote.eastmoney.com/",
-        }
-        async with httpx.AsyncClient(
-            timeout=settings.eastmoney_timeout_seconds,
-            trust_env=False,
-            headers=headers,
-        ) as client:
+        async with EastMoneyHttpClient(allow_curl_fallback=True) as client:
             # 先请求关键行情，同时确定当前环境应使用 httpx 还是系统 curl。
             # 东方财富偶尔会按 TLS 客户端特征主动断开 Python HTTP 连接。
             quote = await self._fetch_quote(client, secid)
@@ -188,7 +178,7 @@ class StockAttributionProvider:
                     industry = await self._fetch_industry(client, industry_name)
                     if industry is None:
                         warnings.append(f"未找到与“{industry_name}”匹配的行业板块")
-                except (httpx.HTTPError, ValueError, UpstreamError):
+                except UpstreamError:
                     warnings.append("行业板块接口暂不可用")
             else:
                 warnings.append("上游未返回股票所属行业")
@@ -211,6 +201,7 @@ class StockAttributionProvider:
                 main_net_inflow=main_net_inflow,
             )
             return StockAttributionContext(
+                source=self.source,
                 stock=stock,
                 indexes=indexes,
                 breadth=breadth,
@@ -219,10 +210,9 @@ class StockAttributionProvider:
                 warnings=warnings,
             )
 
-    async def _fetch_quote(self, client: httpx.AsyncClient, secid: str) -> dict[str, Any]:
-        payload = await _get_json_from_urls(
-            client,
-            (EASTMONEY_QUOTE_URL, EASTMONEY_DELAY_QUOTE_URL),
+    async def _fetch_quote(self, client: EastMoneyHttpClient, secid: str) -> dict[str, Any]:
+        payload = await client.get_json(
+            QUOTE_URL,
             {
                 "fltt": "2",
                 "secid": secid,
@@ -230,6 +220,7 @@ class StockAttributionProvider:
                     "f43,f44,f45,f46,f48,f50,f57,f58,f60,f62,f86,f127,f168,f170"
                 ),
             },
+            fallback_urls=(DELAY_QUOTE_URL,),
         )
         data = payload.get("data")
         if not data:
@@ -237,7 +228,7 @@ class StockAttributionProvider:
         return data
 
     async def _fetch_latest_flow(
-        self, client: httpx.AsyncClient, secid: str
+        self, client: EastMoneyHttpClient, secid: str
     ) -> tuple[date, float] | None:
         params = {
             "secid": secid,
@@ -247,16 +238,15 @@ class StockAttributionProvider:
             "fields2": "f51,f52,f53,f54,f55,f56,f57,f58,f59,f60,f61,f62,f63",
         }
         try:
-            payload = await _get_json_with_retry(
-                client,
-                EASTMONEY_INTRADAY_FLOW_URL,
+            payload = await client.get_json(
+                INTRADAY_FLOW_URL,
                 params,
             )
         except UpstreamError:
-            payload = await _get_json_with_retry(
-                client,
-                EASTMONEY_FLOW_URL,
+            payload = await client.get_json(
+                FLOW_URL,
                 {**params, "klt": "101"},
+                fallback_urls=(DELAY_FLOW_URL,),
             )
         klines = (payload.get("data") or {}).get("klines") or []
         if not klines:
@@ -269,7 +259,7 @@ class StockAttributionProvider:
         except (TypeError, ValueError):
             return None
 
-    async def _fetch_indexes(self, client: httpx.AsyncClient) -> list[IndexSnapshot]:
+    async def _fetch_indexes(self, client: EastMoneyHttpClient) -> list[IndexSnapshot]:
         payloads = await asyncio.gather(
             *(self._fetch_quote(client, secid) for _, secid, _, _ in INDEX_DEFINITIONS),
             return_exceptions=True,
@@ -295,7 +285,7 @@ class StockAttributionProvider:
         return results
 
     async def _fetch_market_breadth(
-        self, client: httpx.AsyncClient
+        self, client: EastMoneyHttpClient
     ) -> MarketBreadthSnapshot | None:
         try:
             items = await _fetch_all_list_items(
@@ -303,7 +293,7 @@ class StockAttributionProvider:
                 fs=ALL_A_SHARE_FILTER,
                 fields="f3",
             )
-        except (httpx.HTTPError, ValueError, UpstreamError):
+        except UpstreamError:
             return None
         changes = [value for item in items if (value := _optional_float(item.get("f3"))) is not None]
         if not changes:
@@ -318,7 +308,7 @@ class StockAttributionProvider:
         )
 
     async def _fetch_industry(
-        self, client: httpx.AsyncClient, industry_name: str
+        self, client: EastMoneyHttpClient, industry_name: str
     ) -> IndustrySnapshot | None:
         items = await _fetch_all_list_items(
             client,
@@ -350,12 +340,11 @@ class StockAttributionProvider:
         )
 
     async def _fetch_announcements(
-        self, client: httpx.AsyncClient, symbol: str
+        self, client: EastMoneyHttpClient, symbol: str
     ) -> list[AnnouncementSnapshot]:
         try:
-            payload = await _get_json_with_retry(
-                client,
-                EASTMONEY_ANNOUNCEMENT_URL,
+            payload = await client.get_json(
+                ANNOUNCEMENT_URL,
                 {
                     "sr": "-1",
                     "page_size": "10",
@@ -365,7 +354,7 @@ class StockAttributionProvider:
                     "stock_list": symbol,
                 },
             )
-        except (httpx.HTTPError, ValueError):
+        except UpstreamError:
             return []
         results: list[AnnouncementSnapshot] = []
         for item in (payload.get("data") or {}).get("list") or []:
@@ -384,7 +373,7 @@ class StockAttributionProvider:
 
 
 async def _fetch_all_list_items(
-    client: httpx.AsyncClient, fs: str, fields: str
+    client: EastMoneyHttpClient, fs: str, fields: str
 ) -> list[dict[str, Any]]:
     first_payload = await _fetch_list_page(client, fs, fields, 1)
     data = first_payload.get("data") or {}
@@ -408,11 +397,10 @@ async def _fetch_all_list_items(
 
 
 async def _fetch_list_page(
-    client: httpx.AsyncClient, fs: str, fields: str, page: int
+    client: EastMoneyHttpClient, fs: str, fields: str, page: int
 ) -> dict[str, Any]:
-    return await _get_json_from_urls(
-        client,
-        (EASTMONEY_LIST_URL, EASTMONEY_DELAY_LIST_URL),
+    return await client.get_json(
+        LIST_URL,
         {
             "pn": str(page),
             "pz": str(PAGE_SIZE),
@@ -425,82 +413,8 @@ async def _fetch_list_page(
             "fs": fs,
             "fields": fields,
         },
+        fallback_urls=(DELAY_LIST_URL,),
     )
-
-
-async def _get_json_with_retry(
-    client: httpx.AsyncClient, url: str, params: dict[str, str]
-) -> dict[str, Any]:
-    global _FORCE_CURL_TRANSPORT
-    if _FORCE_CURL_TRANSPORT:
-        try:
-            return await _get_json_with_curl(url, params)
-        except (OSError, ValueError, asyncio.TimeoutError) as exc:
-            raise UpstreamError("东方财富股票归因接口请求失败") from exc
-
-    try:
-        response = await client.get(url, params=params)
-        response.raise_for_status()
-        return response.json()
-    except (httpx.HTTPError, ValueError) as exc:
-        httpx_error = exc
-    try:
-        result = await _get_json_with_curl(url, params)
-        _FORCE_CURL_TRANSPORT = True
-        return result
-    except (OSError, ValueError, asyncio.TimeoutError) as exc:
-        raise UpstreamError("东方财富股票归因接口请求失败") from (httpx_error or exc)
-
-
-async def _get_json_from_urls(
-    client: httpx.AsyncClient,
-    urls: tuple[str, ...],
-    params: dict[str, str],
-) -> dict[str, Any]:
-    last_error: Exception | None = None
-    for url in urls:
-        try:
-            return await _get_json_with_retry(client, url, params)
-        except UpstreamError as exc:
-            last_error = exc
-    raise UpstreamError("东方财富股票归因接口请求失败") from last_error
-
-
-async def _get_json_with_curl(url: str, params: dict[str, str]) -> dict[str, Any]:
-    command = [
-        "curl",
-        "-sS",
-        "--fail",
-        "--compressed",
-        "--max-time",
-        str(max(3, int(settings.eastmoney_timeout_seconds))),
-        "-A",
-        "Mozilla/5.0",
-        "-e",
-        "https://quote.eastmoney.com/",
-        "-G",
-        url,
-    ]
-    for key, value in params.items():
-        command.extend(("--data-urlencode", f"{key}={value}"))
-    process = await asyncio.create_subprocess_exec(
-        *command,
-        stdout=asyncio.subprocess.PIPE,
-        stderr=asyncio.subprocess.PIPE,
-    )
-    try:
-        stdout, stderr = await asyncio.wait_for(
-            process.communicate(),
-            timeout=settings.eastmoney_timeout_seconds + 2,
-        )
-    except asyncio.TimeoutError:
-        process.kill()
-        await process.communicate()
-        raise
-    if process.returncode != 0:
-        message = stderr.decode("utf-8", errors="replace").strip()
-        raise OSError(message or f"curl 退出码 {process.returncode}")
-    return json.loads(stdout.decode("utf-8"))
 
 
 def _match_board(items: list[dict[str, Any]], industry_name: str) -> dict[str, Any] | None:

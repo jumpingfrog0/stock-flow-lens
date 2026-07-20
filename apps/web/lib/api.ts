@@ -15,7 +15,7 @@ import type {
   StockSearchItem,
   Watchlist,
 } from "@/types/money-flow";
-import type { StockMoveAnalysisResponse } from "@/types/stock-analysis";
+import type { StockMoveAttributionResponse } from "@/types/stock-move-attribution";
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8000";
 
@@ -178,9 +178,9 @@ export async function fetchBoardFlowSummary(
   });
 }
 
-export async function fetchStockMoveAnalysis(symbol: string): Promise<StockMoveAnalysisResponse> {
-  return fetchJson<StockMoveAnalysisResponse>(
-    `${API_BASE_URL}/api/stock-analysis/attribution`,
+export async function fetchStockMoveAttribution(symbol: string): Promise<StockMoveAttributionResponse> {
+  return fetchJson<StockMoveAttributionResponse>(
+    `${API_BASE_URL}/api/stock-move/attribution`,
     "股票涨跌归因失败",
     {
       method: "POST",

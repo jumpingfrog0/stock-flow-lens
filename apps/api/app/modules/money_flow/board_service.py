@@ -1,14 +1,14 @@
 from datetime import date
 
 from app.providers.base import BoardSearchResult, MoneyFlowProvider
-from app.schemas.board_flow import BoardFlowSummaryResponse
-from app.schemas.money_flow import (
+from app.modules.money_flow.board_schemas import BoardFlowSummaryResponse
+from app.modules.money_flow.schemas import (
     DailyMoneyFlow,
     MoneyFlowError,
     MoneyFlowItem,
     MoneyFlowRange,
 )
-from app.services.money_flow_service import direction_for, validate_date_range
+from app.modules.money_flow.service import direction_for, validate_date_range
 from app.utils.errors import AppError, NoDataError
 
 

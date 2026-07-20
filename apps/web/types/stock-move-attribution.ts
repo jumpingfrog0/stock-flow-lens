@@ -16,7 +16,8 @@ export type DriverEvidence = {
   limitations: string[];
 };
 
-export type StockMoveAnalysisResponse = {
+export type StockMoveAttributionResponse = {
+  methodologyVersion: string;
   source: string;
   asOf: string;
   primaryDriver: PrimaryDriver;

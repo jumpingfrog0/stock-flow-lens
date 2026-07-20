@@ -2,11 +2,12 @@
 
 ## 项目概况
 
-`stock-flow-lens` 是本地部署的 A 股资金流统计工具。
+`stock-flow-lens` 是本地部署的 A 股研究工具箱，包含资金流透镜与股票涨跌归因两个独立能力。
 
 - 后端：`apps/api`，FastAPI + SQLite。
 - 前端：`apps/web`，Next.js + TypeScript + Tailwind + ECharts。
 - 数据缓存默认写入：`data/stock-flow.db`。
+- 后端业务模块：`apps/api/app/modules/money_flow` 与 `apps/api/app/modules/stock_move_attribution`。
 
 ## 常用命令
 

@@ -5,13 +5,13 @@ description: Analyze the latest rise or fall of an A-share stock with structured
 
 # Analyze Stock Move
 
-Use the deterministic stock-flow-lens attribution API before forming a narrative. Treat its output as observable evidence and rule-based attribution, not proof of each trader's intent.
+Use the deterministic A股研究工具箱 attribution API before forming a narrative. Treat its output as observable evidence and rule-based attribution, not proof of each trader's intent. The backend engine is the sole source of scoring rules and thresholds.
 
 ## Workflow
 
 1. Run `python scripts/analyze_stock.py <股票代码或名称>`.
 2. If the local API is unavailable, report that the structured attribution service must be started. Do not replace missing data with a confident story.
-3. Read `references/methodology.md` when interpreting scores, counterfactuals, missing fields, or confidence.
+3. Confirm the response contains `methodologyVersion`. Read `references/methodology.md` when interpreting scores, counterfactuals, missing fields, or confidence. Never recompute or override the API scores from prose rules.
 4. Inspect evidence in this order:
    - whole-market direction and breadth;
    - growth-versus-value rotation;

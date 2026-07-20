@@ -10,7 +10,7 @@ RotationDirection = Literal["high_to_low", "low_to_high", "balanced"]
 StyleBucket = Literal["growth", "defensive_value", "unclassified"]
 
 
-class StockMoveAnalysisRequest(BaseModel):
+class StockMoveAttributionRequest(BaseModel):
     symbol: str
 
     @field_validator("symbol")
@@ -104,7 +104,8 @@ class CounterfactualCheck(BaseModel):
     conclusion: str
 
 
-class StockMoveAnalysisResponse(BaseModel):
+class StockMoveAttributionResponse(BaseModel):
+    methodologyVersion: str
     source: str
     asOf: date
     primaryDriver: PrimaryDriver

@@ -3,13 +3,13 @@ from typing import Annotated
 from fastapi import APIRouter, HTTPException, Query
 
 from app.providers.factory import create_provider
-from app.schemas.board_flow import (
+from app.modules.money_flow.board_schemas import (
     BoardFlowSummaryRequest,
     BoardFlowSummaryResponse,
     BoardSearchItem,
     BoardType,
 )
-from app.services.board_flow_service import BoardFlowService
+from app.modules.money_flow.board_service import BoardFlowService
 from app.utils.errors import (
     AppError,
     InvalidBoardError,

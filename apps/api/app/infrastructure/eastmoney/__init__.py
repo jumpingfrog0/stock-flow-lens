@@ -1,0 +1,1 @@
+"""Shared EastMoney transport primitives."""

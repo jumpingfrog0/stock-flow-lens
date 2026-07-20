@@ -6,10 +6,14 @@ from fastapi.testclient import TestClient
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
-from app.api.routes import stock_analysis
 from app.db.models import Base
 from app.db.session import get_db
-from app.providers.stock_attribution import (
+from app.modules.stock_move_attribution import routes as stock_move_attribution
+from app.modules.stock_move_attribution.engine import (
+    METHODOLOGY_VERSION,
+    _rotation_relevant,
+)
+from app.modules.stock_move_attribution.evidence import (
     AnnouncementSnapshot,
     IndexSnapshot,
     IndustrySnapshot,
@@ -17,7 +21,7 @@ from app.providers.stock_attribution import (
     StockAttributionContext,
     StockSnapshot,
 )
-from app.services.stock_analysis_service import StockAnalysisService, _rotation_relevant
+from app.modules.stock_move_attribution.service import StockMoveAttributionService
 
 
 class FakeAttributionProvider:
@@ -52,6 +56,7 @@ def make_context(*, same_day_announcement=False, industry_change=2.0):
     trade_date = date(2026, 7, 15)
     announcement_date = trade_date if same_day_announcement else date(2026, 7, 11)
     return StockAttributionContext(
+        source="eastmoney",
         stock=StockSnapshot(
             code="002714",
             name="牧原股份",
@@ -95,11 +100,12 @@ def make_context(*, same_day_announcement=False, industry_change=2.0):
 
 @pytest.mark.asyncio
 async def test_analysis_identifies_high_to_low_rotation_as_primary_driver():
-    service = StockAnalysisService(make_session(), FakeAttributionProvider(make_context()))
+    service = StockMoveAttributionService(make_session(), FakeAttributionProvider(make_context()))
 
     result = await service.analyze("002714")
 
     assert result.primaryDriver == "market_rotation"
+    assert result.methodologyVersion == METHODOLOGY_VERSION
     assert result.confidence == "high"
     assert result.style.rotation == "high_to_low"
     assert result.stock.marketRelativePct == pytest.approx(5.09)
@@ -113,6 +119,7 @@ async def test_analysis_identifies_high_to_low_rotation_as_primary_driver():
 async def test_analysis_prefers_stock_specific_when_industry_and_style_do_not_explain_move():
     context = make_context(same_day_announcement=True, industry_change=0.2)
     context = StockAttributionContext(
+        source="eastmoney",
         stock=context.stock,
         indexes=make_indexes(growth=(0.2, -0.1), value=(0.1, 0.0)),
         breadth=MarketBreadthSnapshot(total=5000, advancing=2450, declining=2450, flat=100),
@@ -130,7 +137,7 @@ async def test_analysis_prefers_stock_specific_when_industry_and_style_do_not_ex
         announcements=context.announcements,
         warnings=[],
     )
-    service = StockAnalysisService(make_session(), FakeAttributionProvider(context))
+    service = StockMoveAttributionService(make_session(), FakeAttributionProvider(context))
 
     result = await service.analyze("002714")
 
@@ -140,24 +147,28 @@ async def test_analysis_prefers_stock_specific_when_industry_and_style_do_not_ex
     assert result.counterfactuals[2].result == "supports"
 
 
-def test_stock_analysis_route(monkeypatch):
+def test_stock_move_attribution_route(monkeypatch):
     context = make_context()
     monkeypatch.setattr(
-        stock_analysis,
-        "StockAttributionProvider",
+        stock_move_attribution,
+        "StockMoveEvidenceProvider",
         lambda: FakeAttributionProvider(context),
     )
     db = make_session()
     app = FastAPI()
-    app.include_router(stock_analysis.router)
+    app.include_router(stock_move_attribution.router)
     app.dependency_overrides[get_db] = lambda: db
     client = TestClient(app)
 
-    response = client.post("/api/stock-analysis/attribution", json={"symbol": "002714"})
+    response = client.post("/api/stock-move/attribution", json={"symbol": "002714"})
 
     assert response.status_code == 200
+    assert response.json()["methodologyVersion"] == METHODOLOGY_VERSION
     assert response.json()["primaryDriver"] == "market_rotation"
     assert response.json()["stock"]["name"] == "牧原股份"
+
+    old_response = client.post("/api/stock-analysis/attribution", json={"symbol": "002714"})
+    assert old_response.status_code == 404
 
 
 @pytest.mark.parametrize(

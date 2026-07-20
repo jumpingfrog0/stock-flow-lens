@@ -1,4 +1,4 @@
-# 资金流透镜 API
+# A股研究工具箱 API
 
 ## GET /health
 
@@ -277,7 +277,7 @@ GET /api/boards/search?type=industry&q=半导体&limit=20&source=akshare
 }
 ```
 
-## POST /api/stock-analysis/attribution
+## POST /api/stock-move/attribution
 
 自动分析最新交易日的股票涨跌驱动。程序严格按全市场、风格、行业、个股和公告顺序收集证据，
 并返回规则评分与反事实检验。该接口固定使用东方财富实时行情，不读取请求中的资金流 `source`。
@@ -294,6 +294,7 @@ GET /api/boards/search?type=industry&q=半导体&limit=20&source=akshare
 
 ```json
 {
+  "methodologyVersion": "1.0.0",
   "source": "eastmoney",
   "asOf": "2026-07-15",
   "primaryDriver": "market_rotation",
@@ -348,6 +349,7 @@ mixed
 insufficient
 ```
 
+`methodologyVersion` 标识后端归因规则版本；后端引擎是评分阈值和置信度规则的唯一事实源。
 评分用于比较三类解释的证据强弱，不是上涨概率或投资评级。实时资金流缺失且盘中资金流尚未
 更新时，接口不会把上一交易日资金流用于当日归因，而会在 `warnings` 返回具体原因。
 

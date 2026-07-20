@@ -2,15 +2,16 @@ import { formatAmount, formatPercent } from "@/lib/format";
 import type {
   Confidence,
   PrimaryDriver,
-  StockMoveAnalysisResponse,
-} from "@/types/stock-analysis";
+  StockMoveAttributionResponse,
+} from "@/types/stock-move-attribution";
 
 
 type Props = {
-  code: string;
-  data: StockMoveAnalysisResponse | null;
+  symbol: string;
+  data: StockMoveAttributionResponse | null;
   isLoading: boolean;
   error: string | null;
+  onSymbolChange: (symbol: string) => void;
   onAnalyze: () => void;
 };
 
@@ -28,7 +29,14 @@ const CONFIDENCE_LABELS: Record<Confidence, string> = {
   low: "低置信度",
 };
 
-export function StockAnalysisPanel({ code, data, isLoading, error, onAnalyze }: Props) {
+export function StockMoveAttributionPanel({
+  symbol,
+  data,
+  isLoading,
+  error,
+  onSymbolChange,
+  onAnalyze,
+}: Props) {
   return (
     <section className="rounded border border-border bg-white p-5 shadow-surface">
       <div className="flex flex-wrap items-start justify-between gap-3">
@@ -38,14 +46,28 @@ export function StockAnalysisPanel({ code, data, isLoading, error, onAnalyze }: 
             按市场风格、行业共振、个股独立因素和反事实检验依次分析。
           </p>
         </div>
-        <button
-          type="button"
-          onClick={onAnalyze}
-          disabled={isLoading}
-          className="h-9 rounded bg-accent px-4 text-sm font-medium text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-60"
+        <form
+          className="flex w-full gap-2 sm:w-auto"
+          onSubmit={(event) => {
+            event.preventDefault();
+            onAnalyze();
+          }}
         >
-          {isLoading ? "分析中…" : `分析 ${code}`}
-        </button>
+          <input
+            value={symbol}
+            onChange={(event) => onSymbolChange(event.target.value)}
+            placeholder="输入股票代码或名称"
+            aria-label="股票代码或名称"
+            className="h-9 min-w-0 flex-1 rounded border border-border px-3 text-sm outline-none transition focus:border-accent focus:ring-2 focus:ring-blue-100 sm:w-52"
+          />
+          <button
+            type="submit"
+            disabled={isLoading || !symbol.trim()}
+            className="h-9 shrink-0 rounded bg-accent px-4 text-sm font-medium text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-60"
+          >
+            {isLoading ? "分析中…" : "开始分析"}
+          </button>
+        </form>
       </div>
 
       {error ? <div className="mt-4 rounded bg-red-50 px-4 py-3 text-sm text-red-700">{error}</div> : null}
@@ -70,6 +92,7 @@ export function StockAnalysisPanel({ code, data, isLoading, error, onAnalyze }: 
                 {CONFIDENCE_LABELS[data.confidence]}
               </span>
               <span className="text-xs text-muted">截至 {data.asOf}</span>
+              <span className="text-xs text-muted">方法版本 {data.methodologyVersion}</span>
             </div>
             <p className="mt-2 text-sm leading-6 text-slate-700">{data.summary}</p>
           </div>

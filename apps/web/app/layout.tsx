@@ -2,8 +2,11 @@ import type { Metadata } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "资金流透镜",
-  description: "A 股资金流统计、本地缓存与可视化工具",
+  title: {
+    default: "A股研究工具箱",
+    template: "%s | A股研究工具箱",
+  },
+  description: "面向 A 股的资金流查询与股票涨跌归因工具",
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

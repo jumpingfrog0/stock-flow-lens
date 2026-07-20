@@ -6,7 +6,7 @@ from sqlalchemy.orm import Session
 from app.db.models import MoneyFlowDaily
 from app.providers.base import MoneyFlowProvider
 from app.providers.symbols import infer_secid
-from app.schemas.money_flow import (
+from app.modules.money_flow.schemas import (
     DailyMoneyFlow,
     MoneyFlowError,
     MoneyFlowItem,

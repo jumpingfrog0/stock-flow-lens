@@ -1,9 +1,12 @@
-import asyncio
 from datetime import date
 
-import httpx
-
-from app.core.config import settings
+from app.infrastructure.eastmoney.client import (
+    DELAY_FLOW_URL,
+    DELAY_LIST_URL,
+    FLOW_URL,
+    LIST_URL,
+    EastMoneyHttpClient,
+)
 from app.providers.base import (
     BoardDailyFlow,
     BoardDailyFlowResult,
@@ -17,16 +20,10 @@ from app.providers.symbols import infer_board_secid, infer_secid
 from app.utils.errors import InvalidBoardError, NoDataError, UpstreamError
 
 
-EASTMONEY_FLOW_URL = "https://push2his.eastmoney.com/api/qt/stock/fflow/daykline/get"
-EASTMONEY_DELAY_FLOW_URL = (
-    "https://push2delay.eastmoney.com/api/qt/stock/fflow/daykline/get"
-)
-EASTMONEY_BOARD_LIST_URL = "https://push2.eastmoney.com/api/qt/clist/get"
-EASTMONEY_DELAY_BOARD_LIST_URL = "https://push2delay.eastmoney.com/api/qt/clist/get"
-EASTMONEY_FALLBACK_URLS = {
-    EASTMONEY_FLOW_URL: EASTMONEY_DELAY_FLOW_URL,
-    EASTMONEY_BOARD_LIST_URL: EASTMONEY_DELAY_BOARD_LIST_URL,
-}
+EASTMONEY_FLOW_URL = FLOW_URL
+EASTMONEY_DELAY_FLOW_URL = DELAY_FLOW_URL
+EASTMONEY_BOARD_LIST_URL = LIST_URL
+EASTMONEY_DELAY_BOARD_LIST_URL = DELAY_LIST_URL
 BOARD_TYPE_FS = {
     "industry": "m:90+t:2",
     "concept": "m:90+t:3",
@@ -47,14 +44,9 @@ class EastMoneyProvider(MoneyFlowProvider):
             "fields1": "f1,f2,f3,f7",
             "fields2": "f51,f52,f53,f54,f55,f56,f57,f58,f59,f60,f61,f62,f63",
         }
-        headers = {
-            "User-Agent": "Mozilla/5.0",
-            "Referer": "https://quote.eastmoney.com/",
-        }
-
         try:
-            payload = await _get_json_with_retry(EASTMONEY_FLOW_URL, params, headers)
-        except (httpx.HTTPError, ValueError) as exc:
+            payload = await _get_json_with_retry(EASTMONEY_FLOW_URL, params)
+        except UpstreamError as exc:
             raise UpstreamError("东方财富接口请求失败", symbol) from exc
 
         data = payload.get("data")
@@ -98,14 +90,9 @@ class EastMoneyProvider(MoneyFlowProvider):
             "fs": fs,
             "fields": "f12,f14",
         }
-        headers = {
-            "User-Agent": "Mozilla/5.0",
-            "Referer": "https://quote.eastmoney.com/",
-        }
-
         try:
-            payload = await _get_json_with_retry(EASTMONEY_BOARD_LIST_URL, params, headers)
-        except (httpx.HTTPError, ValueError) as exc:
+            payload = await _get_json_with_retry(EASTMONEY_BOARD_LIST_URL, params)
+        except UpstreamError as exc:
             raise UpstreamError("东方财富板块搜索失败") from exc
 
         diff = (payload.get("data") or {}).get("diff")
@@ -147,14 +134,9 @@ class EastMoneyProvider(MoneyFlowProvider):
             "fields1": "f1,f2,f3,f7",
             "fields2": "f51,f52,f53,f54,f55,f56,f57,f58,f59,f60,f61,f62,f63",
         }
-        headers = {
-            "User-Agent": "Mozilla/5.0",
-            "Referer": "https://quote.eastmoney.com/",
-        }
-
         try:
-            payload = await _get_json_with_retry(EASTMONEY_FLOW_URL, params, headers)
-        except (httpx.HTTPError, ValueError) as exc:
+            payload = await _get_json_with_retry(EASTMONEY_FLOW_URL, params)
+        except UpstreamError as exc:
             raise UpstreamError("东方财富板块资金流接口请求失败", code) from exc
 
         data = payload.get("data")
@@ -189,35 +171,14 @@ def _board_fs(board_type: str) -> str:
 
 
 async def _get_json_with_retry(
-    url: str, params: dict[str, str], headers: dict[str, str]
+    url: str, params: dict[str, str]
 ) -> dict:
-    last_error: Exception | None = None
-    async with httpx.AsyncClient(
-        timeout=settings.eastmoney_timeout_seconds,
-        trust_env=False,
-    ) as client:
-        candidate_urls = (
-            (url, EASTMONEY_FALLBACK_URLS[url])
-            if url in EASTMONEY_FALLBACK_URLS
-            else (url,)
-        )
-        for candidate_url in candidate_urls:
-            for attempt in range(3):
-                try:
-                    response = await client.get(
-                        candidate_url,
-                        params=params,
-                        headers=headers,
-                    )
-                    response.raise_for_status()
-                    return response.json()
-                except (httpx.HTTPError, ValueError) as exc:
-                    last_error = exc
-                    if attempt < 2:
-                        await asyncio.sleep(0.4 * (attempt + 1))
-    if last_error:
-        raise last_error
-    raise UpstreamError("东方财富接口请求失败")
+    fallback_urls = {
+        EASTMONEY_FLOW_URL: (EASTMONEY_DELAY_FLOW_URL,),
+        EASTMONEY_BOARD_LIST_URL: (EASTMONEY_DELAY_BOARD_LIST_URL,),
+    }.get(url, ())
+    async with EastMoneyHttpClient() as client:
+        return await client.get_json(url, params, fallback_urls=fallback_urls)
 
 
 def _to_float(value: str) -> float | None:
