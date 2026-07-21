@@ -10,11 +10,19 @@ API_PORT=8000
 WEB_PORT=3000
 API_PID=""
 WEB_PID=""
+STOPPING=0
 
 cleanup() {
+  (( STOPPING )) && return
+  STOPPING=1
+  trap - INT TERM
+
   print "\n正在停止服务…"
   [[ -n "$API_PID" ]] && kill "$API_PID" 2>/dev/null || true
   [[ -n "$WEB_PID" ]] && kill "$WEB_PID" 2>/dev/null || true
+  [[ -n "$API_PID" ]] && wait "$API_PID" 2>/dev/null || true
+  [[ -n "$WEB_PID" ]] && wait "$WEB_PID" 2>/dev/null || true
+  print "服务已停止。"
 }
 
 port_in_use() {
@@ -52,14 +60,16 @@ if [[ ! -d "$WEB_DIR/node_modules" ]]; then
   (cd "$WEB_DIR" && npm install) || exit 1
 fi
 
-trap cleanup INT TERM EXIT
+trap 'cleanup; exit 130' INT
+trap 'cleanup; exit 143' TERM
+trap cleanup EXIT
 
 print "正在启动后端：http://localhost:$API_PORT"
 (cd "$API_DIR" && exec .venv/bin/python -m uvicorn app.main:app --reload --port "$API_PORT") &
 API_PID=$!
 
 print "正在启动前端：http://localhost:$WEB_PORT"
-(cd "$WEB_DIR" && exec npm run dev) &
+(cd "$WEB_DIR" && exec ./node_modules/.bin/next dev) &
 WEB_PID=$!
 
 print "\n服务启动中，浏览器将在后端就绪后打开。"
