@@ -1,0 +1,28 @@
+docs/product-roadmap.md
+  s_eae9421e0c4224::t_175db9df819263 52,55-81,150,161,173
+  s_eae9421e0c4224::t_5e458339a1b74a 1-51,53-54,82-149,151-160,162-172,174-183
+"docs/资金流透镜 项目计划.md"
+  s_eae9421e0c4224::t_a75bbac0a284b9 182,210,214,218,223,235,276,300,306,308-309,312,315,329,331,360,363,389,391,404,464,466
+  s_eae9421e0c4224::t_4ac3a7b79f822a 1,3-12,20-21,24,33,40,43,97,99,109,114-120,122,124-127,131,133
+.gitignore
+  s_eae9421e0c4224::t_2d900ffcf3d5a2 75-77
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.15",
+  "base_commit_sha": "5c108de691dc21187d851c3ffad6a0432ce47e4f",
+  "prompts": {},
+  "logical_commit_id": "5c108de691dc21187d851c3ffad6a0432ce47e4f",
+  "sessions": {
+    "s_eae9421e0c4224": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019f7e89-cac4-7801-b262-992c81fa230e",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "jumpingfrog0 <jumpingfrog0@gmail.com>",
+      "total_additions": 837,
+      "total_deletions": 53
+    }
+  }
+}
