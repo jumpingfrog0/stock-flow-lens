@@ -72,6 +72,9 @@ Thumbs.db
 .idea/
 .vscode/
 
+# Local working documents
+.huangdonghong/
+
 # Temporary files
 tmp/
 temp/
